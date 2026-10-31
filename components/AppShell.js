@@ -3,29 +3,32 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3,
-  Settings, HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, ChevronDown,
+  Settings, HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, ChevronDown, UserCog,
 } from 'lucide-react'
-import NotificationBell from './NotificationBell'
 
 const items = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/filings', label: 'My Filings', icon: FileText },
   { href: '/reminders', label: 'Reminders', icon: AlarmClock },
-  { href: '/clients', label: 'Clients', icon: Users },
+  { href: '/clients', label: 'Clients', icon: Users, roles: ['admin', 'staff'] },
   { href: '/notifications', label: 'Notifications', icon: Bell, badge: true },
   { href: '/reports', label: 'Reports', icon: ClipboardList },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/team', label: 'Team & Roles', icon: UserCog, roles: ['admin'] },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/help', label: 'Help & Support', icon: HelpCircle },
 ]
+
+const roleLabel = { admin: 'Super Admin', staff: 'Staff', client: 'Client' }
 
 export default function AppShell({ children }) {
   const pathname = usePathname()
   const router = useRouter()
   const [theme, setTheme] = useState('red')
-  const [profile, setProfile] = useState({ name: '', email: '' })
+  const [profile, setProfile] = useState({ name: '', email: '', role: '' })
   const [dueCount, setDueCount] = useState(0)
 
   useEffect(() => {
@@ -40,8 +43,8 @@ export default function AppShell({ children }) {
       const { data } = await supabase.auth.getSession()
       if (!data.session) return router.push('/login')
       const u = data.session.user
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', u.id).single()
-      setProfile({ name: p?.full_name || u.email, email: u.email })
+      const { data: p } = await supabase.from('profiles').select('full_name, role').eq('id', u.id).single()
+      setProfile({ name: p?.full_name || u.email, email: u.email, role: p?.role || 'staff' })
 
       const { data: f } = await supabase.from('filings').select('due_date,status').neq('status', 'filed')
       const today = new Date().toLocaleDateString('en-CA')
@@ -65,9 +68,10 @@ export default function AppShell({ children }) {
 
   if (pathname === '/login') return children
 
+  const visible = items.filter((i) => !i.roles || i.roles.includes(profile.role))
+
   return (
     <div className="flex min-h-screen">
-      {/* SIDEBAR */}
       <aside className="w-64 shrink-0 p-4 flex flex-col border-r border-[var(--border)] bg-[var(--panel)]">
         <div className="flex items-center gap-3 px-2 py-3 mb-4">
           <ShieldCheck size={40} className="text-[var(--accent)]" />
@@ -78,7 +82,7 @@ export default function AppShell({ children }) {
         </div>
 
         <nav className="space-y-1">
-          {items.map(({ href, label, icon: Icon, badge }) => {
+          {visible.map(({ href, label, icon: Icon, badge }) => {
             const active = pathname === href
             return (
               <Link key={href} href={href}
@@ -113,14 +117,13 @@ export default function AppShell({ children }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold truncate">{profile.name}</div>
-              <div className="text-xs text-[var(--muted)]">Super Admin</div>
+              <div className="text-xs text-[var(--muted)]">{roleLabel[profile.role] || ''}</div>
             </div>
             <ChevronDown size={16} className="text-[var(--muted)]" />
           </div>
         </div>
       </aside>
 
-      {/* MAIN */}
       <div className="flex-1 min-w-0">
         <header className="flex items-center gap-4 px-8 py-4">
           <div className="flex-1 card flex items-center gap-3 px-4 py-2.5 rounded-full">
