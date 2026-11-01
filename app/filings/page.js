@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { FileText, Plus, Pencil, Trash2, Search, MessageCircle, Loader2 } from 'lucide-react'
+import { FileText, Plus, Pencil, Trash2, Search, MessageCircle, Loader2 ,Paperclip } from 'lucide-react'
 import { PageHeader, EmptyState, Skeleton, StatusBadge, Modal } from '@/components/ui'
+import DocumentsModal from '@/components/DocumentsModal'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const todayStr = () => new Date().toLocaleDateString('en-CA')
@@ -80,6 +81,7 @@ export default function Filings() {
   const [limit, setLimit] = useState(50)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [docFiling, setDocFiling] = useState(null)
   const [edit, setEdit] = useState(null)
   const [err, setErr] = useState('')
   const [saving, setSaving] = useState(false)
@@ -101,8 +103,8 @@ export default function Filings() {
       supabase.from('filing_types').select('*').order('name'),
       supabase.from('profiles').select('id,full_name').neq('role', 'client'),
       supabase.from('filings')
-        .select('*, clients(name, phone), filing_types(name), filing_assignees(user_id, profiles(full_name))')
-        .order('due_date'),
+      .select('*, clients(name, phone), filing_types(name), filing_assignees(user_id, profiles(full_name)), filing_documents(count)')
+      .order('due_date'),
     ])
     setClients(c.data || [])
     setTypes(t.data || [])
@@ -176,6 +178,7 @@ export default function Filings() {
       filing_id: f.id, user_id: s.session.user.id, action: 'status_changed', note: `${f.status} se ${status}`,
     })
     load()
+        if (status === 'filed') setDocFiling(f)
   }
 
   function openEdit(f) {
@@ -223,6 +226,8 @@ export default function Filings() {
 
   async function remove(f) {
     if (!confirm(`${f.filing_types?.name} (${f.clients?.name}) delete karein? Ye wapas nahi aayegi.`)) return
+        const { data: docs } = await supabase.from('filing_documents').select('file_path').eq('filing_id', f.id)
+    if (docs?.length) await supabase.storage.from('filing-proofs').remove(docs.map((d) => d.file_path))
     const { error } = await supabase.from('filings').delete().eq('id', f.id)
     if (error) return alert(error.message)
     flash('Filing delete ho gayi')
@@ -313,6 +318,14 @@ export default function Filings() {
                   </td>
                   <td>
                     <div className="flex justify-end gap-1">
+                                              <button className="icon-btn relative" title="Documents / ARN proof" onClick={() => setDocFiling(f)}>
+                        <Paperclip size={16} />
+                        {(f.filing_documents?.[0]?.count || 0) > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-white rounded-full text-[10px] px-1">
+                            {f.filing_documents[0].count}
+                          </span>
+                        )}
+                      </button>
                       {f.clients?.phone && (
                         <a className="icon-btn" title="Client ko WhatsApp bhejo" target="_blank" rel="noreferrer"
                           href={`https://wa.me/${f.clients.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
@@ -458,6 +471,10 @@ export default function Filings() {
             </div>
           </form>
         </Modal>
+      )}
+
+            {docFiling && (
+        <DocumentsModal filing={docFiling} canEdit={canEdit} onClose={() => setDocFiling(null)} onChanged={load} />
       )}
     </div>
   )
