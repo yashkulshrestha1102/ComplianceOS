@@ -46,6 +46,14 @@ export default function Filings() {
   }
   useEffect(() => { load() }, [])
 
+    useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('q')
+    if (fromUrl) setSearch(fromUrl)
+    const onSearch = (e) => setSearch(e.detail || '')
+    window.addEventListener('global-search', onSearch)
+    return () => window.removeEventListener('global-search', onSearch)
+  }, [])
+
   function pickType(id) {
     const t = types.find((x) => x.id === id)
     setForm({ ...form, filing_type_id: id, reminderDays: t ? t.default_reminder_days.join(',') : form.reminderDays })

@@ -1,6 +1,9 @@
 import './globals.css'
 import { Suspense } from 'react'
+import { Inter } from 'next/font/google'
 import AppShell from '@/components/AppShell'
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata = {
   title: 'ComplianceOS',
@@ -9,7 +12,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body>
         <Suspense fallback={null}>
           <AppShell>{children}</AppShell>
