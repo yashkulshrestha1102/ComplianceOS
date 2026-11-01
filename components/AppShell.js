@@ -6,14 +6,15 @@ import { supabase } from '@/lib/supabase'
 import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3, Settings,
-  HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, UserCog, Repeat, Upload, Menu,
+  HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, UserCog, Repeat, Upload, Menu,Briefcase,
 } from 'lucide-react'
 
 const groups = [
   { label: 'Overview', items: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/filings', label: 'My Filings', icon: FileText },
-    { href: '/reminders', label: 'Reminders', icon: AlarmClock },
+    { href: '/portal', label: 'My Portal', icon: Briefcase, roles: ['client'] },
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
+    { href: '/filings', label: 'My Filings', icon: FileText, roles: ['admin', 'staff'] },
+    { href: '/reminders', label: 'Reminders', icon: AlarmClock, roles: ['admin', 'staff'] },
     { href: '/notifications', label: 'Notifications', icon: Bell, badge: true },
   ] },
   { label: 'Manage', items: [
@@ -22,8 +23,8 @@ const groups = [
     { href: '/import', label: 'Bulk Import', icon: Upload, roles: ['admin', 'staff'] },
   ] },
   { label: 'Insights', items: [
-    { href: '/reports', label: 'Reports', icon: ClipboardList },
-    { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/reports', label: 'Reports', icon: ClipboardList, roles: ['admin', 'staff'] },
+    { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin', 'staff'] },
   ] },
   { label: 'Account', items: [
     { href: '/team', label: 'Team & Roles', icon: UserCog, roles: ['admin'] },
@@ -59,6 +60,9 @@ export default function AppShell({ children }) {
       const u = data.session.user
       const { data: p } = await supabase.from('profiles').select('full_name, role').eq('id', u.id).single()
       setProfile({ name: p?.full_name || u.email, email: u.email, role: p?.role || 'staff' })
+            if (p?.role === 'client' && !['/portal', '/notifications', '/settings', '/help'].includes(pathname)) {
+        router.replace('/portal')
+      }
 
       const { data: f } = await supabase.from('filings').select('due_date,status').neq('status', 'filed')
       const today = new Date().toLocaleDateString('en-CA')
