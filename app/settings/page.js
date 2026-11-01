@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Send, Phone } from 'lucide-react'
+import EscalationSettings from '@/components/EscalationSettings'
 
 export default function Settings() {
   const [uid, setUid] = useState('')
@@ -65,7 +66,7 @@ export default function Settings() {
           <button onClick={verifyTelegram} className="border border-[var(--accent)] text-[var(--accent)] px-4 py-2 rounded">Verify</button>
         </div>
       </div>
-
+            <EscalationSettings />
       {msg && <p className="text-sm">{msg}</p>}
     </div>
   )
