@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
+import { generateRecurring } from '@/lib/recurring'
 const adminClient = () =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
@@ -49,7 +49,7 @@ export async function GET(request) {
   const force = url.searchParams.get('force') === '1' // sirf testing ke liye
   const supabase = adminClient()
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
-
+    const generated = await generateRecurring(supabase, today)
   const { data: filings, error } = await supabase
     .from('filings')
     .select('*, clients(name), filing_types(name), filing_assignees(user_id, profiles(full_name, email, telegram_chat_id))')
@@ -118,5 +118,5 @@ export async function GET(request) {
     }
   }
 
-  return NextResponse.json({ date: today, checked: filings.length, sent: results })
+  return NextResponse.json({ date: today, generated, checked: filings.length, sent: results })
 }

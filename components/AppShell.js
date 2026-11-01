@@ -20,6 +20,7 @@ const items = [
   { href: '/team', label: 'Team & Roles', icon: UserCog, roles: ['admin'] },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/help', label: 'Help & Support', icon: HelpCircle },
+  { href: '/recurring', label: 'Recurring', icon: Repeat, roles: ['admin', 'staff'] },
 ]
 
 const roleLabel = { admin: 'Super Admin', staff: 'Staff', client: 'Client' }
