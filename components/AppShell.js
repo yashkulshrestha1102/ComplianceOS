@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3,
-  Settings, HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, ChevronDown, UserCog,
+  Settings, HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, ChevronDown, UserCog,Repeat ,Upload
 } from 'lucide-react'
 
 const items = [
