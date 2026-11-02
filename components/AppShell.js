@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3, Settings,
-  HelpCircle, ShieldCheck, Search, Leaf, LogOut, Crown, UserCog, Repeat, Upload, Menu,Briefcase,
+  HelpCircle, ShieldCheck, Search, Leaf, LogOut, UserCog, Repeat, Upload, Menu, Briefcase,
+  ListChecks, Loader2,
 } from 'lucide-react'
 
 const groups = [
@@ -15,11 +16,12 @@ const groups = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { href: '/filings', label: 'My Filings', icon: FileText, roles: ['admin', 'staff'] },
     { href: '/reminders', label: 'Reminders', icon: AlarmClock, roles: ['admin', 'staff'] },
-    { href: '/notifications', label: 'Notifications', icon: Bell, badge: true },
+    { href: '/notifications', label: 'Notifications', icon: Bell },
   ] },
   { label: 'Manage', items: [
     { href: '/recurring', label: 'Recurring', icon: Repeat, roles: ['admin', 'staff'] },
     { href: '/clients', label: 'Clients', icon: Users, roles: ['admin', 'staff'] },
+    { href: '/filing-types', label: 'Filing Types', icon: ListChecks, roles: ['admin'] },
     { href: '/import', label: 'Bulk Import', icon: Upload, roles: ['admin', 'staff'] },
   ] },
   { label: 'Insights', items: [
@@ -34,13 +36,21 @@ const groups = [
 ]
 
 const roleLabel = { admin: 'Super Admin', staff: 'Staff', client: 'Client' }
+const CLIENT_PATHS = ['/portal', '/notifications', '/settings', '/help']
+const ADMIN_PATHS = ['/team', '/filing-types']
+
+function canAccess(path, role) {
+  if (role === 'client') return CLIENT_PATHS.includes(path)
+  if (role === 'admin') return true
+  return !ADMIN_PATHS.includes(path)
+}
 
 export default function AppShell({ children }) {
   const pathname = usePathname()
   const router = useRouter()
   const [theme, setTheme] = useState('red')
-  const [profile, setProfile] = useState({ name: '', email: '', role: '' })
-  const [dueCount, setDueCount] = useState(0)
+  const [profile, setProfile] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
 
@@ -50,27 +60,41 @@ export default function AppShell({ children }) {
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
-  useEffect(() => { setOpen(false) }, [pathname])
-
+  // Login check: sirf ek baar, aur login/logout par
   useEffect(() => {
-    if (pathname === '/login') return
-    async function init() {
-      const { data } = await supabase.auth.getSession()
-      if (!data.session) return router.push('/login')
-      const u = data.session.user
-      const { data: p } = await supabase.from('profiles').select('full_name, role').eq('id', u.id).single()
-      setProfile({ name: p?.full_name || u.email, email: u.email, role: p?.role || 'staff' })
-            if (p?.role === 'client' && !['/portal', '/notifications', '/settings', '/help'].includes(pathname)) {
-        router.replace('/portal')
-      }
+    let active = true
 
-      const { data: f } = await supabase.from('filings').select('due_date,status').neq('status', 'filed')
-      const today = new Date().toLocaleDateString('en-CA')
-      const limit = new Date(Date.now() + 5 * 86400000).toLocaleDateString('en-CA')
-      setDueCount((f || []).filter((x) => x.due_date >= today && x.due_date <= limit).length)
+    async function loadProfile(session) {
+      if (!session) {
+        if (active) { setProfile(null); setAuthChecked(true) }
+        return
+      }
+      const { data: p } = await supabase.from('profiles')
+        .select('full_name, role').eq('id', session.user.id).single()
+      if (!active) return
+      setProfile({ name: p?.full_name || session.user.email, email: session.user.email, role: p?.role || 'staff' })
+      setAuthChecked(true)
     }
-    init()
-  }, [pathname, router])
+
+    supabase.auth.getSession().then(({ data }) => loadProfile(data.session))
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') { setProfile(null); setAuthChecked(true) }
+      if (event === 'SIGNED_IN') {
+        setAuthChecked(false)
+        setTimeout(() => loadProfile(session), 0)
+      }
+    })
+    return () => { active = false; sub.subscription.unsubscribe() }
+  }, [])
+
+  // Page ka access check (network nahi lagta)
+  useEffect(() => {
+    setOpen(false)
+    if (!authChecked || pathname === '/login') return
+    if (!profile) { router.replace('/login'); return }
+    if (!canAccess(pathname, profile.role)) router.replace(profile.role === 'client' ? '/portal' : '/')
+  }, [authChecked, profile, pathname, router])
 
   function toggleTheme() {
     const next = theme === 'red' ? 'jungle' : 'red'
@@ -81,7 +105,7 @@ export default function AppShell({ children }) {
 
   async function logout() {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.replace('/login')
   }
 
   function onSearch(e) {
@@ -92,6 +116,14 @@ export default function AppShell({ children }) {
   }
 
   if (pathname === '/login') return children
+
+  if (!authChecked || !profile || !canAccess(pathname, profile.role)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-[var(--accent)]" />
+      </div>
+    )
+  }
 
   const sidebar = (
     <div className="flex flex-col min-h-full p-4">
@@ -111,7 +143,7 @@ export default function AppShell({ children }) {
             <div key={g.label} className="mt-4">
               <div className="px-3 mb-1 text-[0.68rem] font-semibold uppercase tracking-wider text-[var(--muted)] opacity-70">{g.label}</div>
               <div className="space-y-0.5">
-                {visible.map(({ href, label, icon: Icon, badge }) => {
+                {visible.map(({ href, label, icon: Icon }) => {
                   const active = pathname === href
                   return (
                     <Link key={href} href={href}
@@ -121,9 +153,6 @@ export default function AppShell({ children }) {
                       style={active ? { boxShadow: '0 0 18px var(--glow)' } : {}}>
                       <Icon size={18} />
                       <span className="flex-1">{label}</span>
-                      {badge && dueCount > 0 && (
-                        <span className="bg-[var(--accent)] text-white text-xs rounded-full px-2 py-0.5">{dueCount}</span>
-                      )}
                     </Link>
                   )
                 })}
@@ -133,25 +162,15 @@ export default function AppShell({ children }) {
         })}
       </nav>
 
-      <div className="space-y-3 pt-6">
-        <div className="card p-3 flex items-center gap-2" style={{ borderColor: 'var(--accent)' }}>
-          <Crown className="text-yellow-400" size={22} />
-          <div>
-            <div className="text-sm font-semibold text-yellow-400">Pro Plan</div>
-            <div className="text-xs text-[var(--muted)]">Active Forever (Free)</div>
-          </div>
+      <Link href="/settings" className="card p-3 mt-6 flex items-center gap-3 hover:border-[var(--accent)] transition">
+        <div className="w-10 h-10 rounded-full bg-[var(--accent)] text-white flex items-center justify-center font-bold">
+          {(profile.name || '?').charAt(0).toUpperCase()}
         </div>
-
-        <div className="card p-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center font-bold">
-            {(profile.name || '?').charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold truncate">{profile.name}</div>
-            <div className="text-xs text-[var(--muted)]">{roleLabel[profile.role] || ''}</div>
-          </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold truncate">{profile.name}</div>
+          <div className="text-xs text-[var(--muted)]">{roleLabel[profile.role] || ''}</div>
         </div>
-      </div>
+      </Link>
     </div>
   )
 
@@ -175,11 +194,13 @@ export default function AppShell({ children }) {
             <Menu size={20} />
           </button>
 
-          <form onSubmit={onSearch} className="flex-1 card flex items-center gap-3 px-4 py-2.5 rounded-full">
-            <Search size={18} className="text-[var(--muted)] shrink-0" />
-            <input className="bare w-full text-sm outline-none" value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Filing, client ya period dhundo... (Enter)" />
-          </form>
+          {profile.role !== 'client' ? (
+            <form onSubmit={onSearch} className="flex-1 card flex items-center gap-3 px-4 py-2.5 rounded-full">
+              <Search size={18} className="text-[var(--muted)] shrink-0" />
+              <input className="bare w-full text-sm outline-none" value={q} onChange={(e) => setQ(e.target.value)}
+                placeholder="Filing, client ya period dhundo... (Enter)" />
+            </form>
+          ) : <div className="flex-1" />}
 
           <button onClick={toggleTheme}
             className="flex items-center gap-2 px-3 lg:px-4 py-2.5 rounded-full text-sm border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)]"

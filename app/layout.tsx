@@ -2,6 +2,7 @@ import './globals.css'
 import { Suspense } from 'react'
 import { Inter } from 'next/font/google'
 import AppShell from '@/components/AppShell'
+import Feedback from '@/components/Feedback'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <AppShell>{children}</AppShell>
         </Suspense>
+        <Feedback />
       </body>
     </html>
   )
