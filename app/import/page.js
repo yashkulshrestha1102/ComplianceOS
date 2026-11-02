@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Papa from 'papaparse'
 import { supabase } from '@/lib/supabase'
-import { Upload, Download } from 'lucide-react'
+import { Upload, Download, Loader2 } from 'lucide-react'
+import { PageHeader } from '@/components/ui'
 
 const VALID_CHANNELS = ['email', 'push', 'whatsapp', 'telegram']
 const TEMPLATE =
@@ -190,67 +191,74 @@ export default function ImportPage() {
     }
   }
 
-  return (
-    <div className="px-8 pb-10 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Upload className="text-[var(--accent)]" /> Bulk Import
-      </h1>
-      <p className="text-sm text-[var(--muted)] mb-6">
-        Excel me filings ki list banao, <b>File → Save As → CSV UTF-8</b> karke yahan upload karo.
-      </p>
+    return (
+    <div className="page">
+      <PageHeader icon={Upload} title="Bulk Import" subtitle="Excel se bahut saari filings ek saath daalo" />
 
-      <div className="card p-5 space-y-4 mb-6">
-        <button onClick={downloadTemplate} className="flex items-center gap-2 text-sm border border-[var(--accent)] text-[var(--accent)] px-3 py-2 rounded">
-          <Download size={16} /> Sample CSV download karo
-        </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="card p-5 lg:col-span-2 space-y-4">
+          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[var(--border)] rounded-xl p-8 cursor-pointer hover:border-[var(--accent)] transition text-center">
+            <Upload size={28} className="text-[var(--accent)]" />
+            <span className="font-semibold text-sm">{fileName || 'CSV file chuno'}</span>
+            <span className="text-xs text-[var(--muted)]">Excel me File → Save As → CSV UTF-8, phir yahan upload karo</span>
+            <input type="file" accept=".csv" className="hidden" onChange={onFile} />
+          </label>
 
-        <ul className="text-xs text-[var(--muted)] list-disc ml-5 space-y-1">
-          <li><b>client_name</b> aur <b>filing_type</b> (jaise GSTR-3B) system ke naam se match hone chahiye.</li>
-          <li><b>due_date</b>: DD-MM-YYYY ya YYYY-MM-DD likho.</li>
-          <li><b>reminder_days</b>, <b>channels</b>, <b>assignee_emails</b>: ek se zyada ho to semicolon se alag karo (5;2;0). Khali chhodoge to default lagega.</li>
-        </ul>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={createClients} onChange={(e) => setCreateClients(e.target.checked)} />
+            Jo clients system me nahi hain unhe apne aap bana do
+          </label>
+        </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={createClients} onChange={(e) => setCreateClients(e.target.checked)} />
-          Jo clients system me nahi hain unhe apne aap bana do
-        </label>
-
-        <div>
-          <input type="file" accept=".csv" onChange={onFile} />
-          {fileName && <span className="text-sm text-[var(--muted)] ml-2">{fileName}</span>}
+        <div className="card p-5 text-sm space-y-3">
+          <div className="font-semibold">Kaise karein?</div>
+          <ol className="list-decimal ml-5 text-[var(--muted)] space-y-1">
+            <li>Sample CSV download karo.</li>
+            <li>Excel me apni filings bharo.</li>
+            <li>CSV UTF-8 me save karke upload karo.</li>
+            <li>Preview dekho, phir import dabao.</li>
+          </ol>
+          <button onClick={downloadTemplate} className="btn btn-outline"><Download size={16} /> Sample CSV</button>
+          <ul className="text-xs text-[var(--muted)] list-disc ml-4 space-y-1">
+            <li><b>client_name</b> aur <b>filing_type</b> system ke naam se match hone chahiye.</li>
+            <li><b>due_date</b>: DD-MM-YYYY ya YYYY-MM-DD.</li>
+            <li>Ek se zyada values semicolon se: <b>5;2;0</b>. Khali chhodo to default lagega.</li>
+          </ul>
         </div>
       </div>
 
       {checked.length > 0 && (
         <>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm">
-              Total {checked.length} rows: <b className="text-green-500">{good.length} sahi</b>,{' '}
-              <b className="text-red-500">{checked.length - good.length} galat</b>
-            </p>
-            <button disabled={busy || good.length === 0} onClick={doImport}
-              className="bg-[var(--accent)] text-white px-4 py-2 rounded disabled:opacity-50">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="flex gap-2 text-sm">
+              <span className="badge badge-gray">Total {checked.length}</span>
+              <span className="badge badge-green">{good.length} sahi</span>
+              <span className="badge badge-red">{checked.length - good.length} galat</span>
+            </div>
+            <button disabled={busy || good.length === 0} onClick={doImport} className="btn btn-primary">
+              {busy && <Loader2 size={16} className="animate-spin" />}
               {busy ? 'Import ho raha hai...' : `${good.length} sahi rows import karo`}
             </button>
           </div>
 
-          <div className="card overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="card overflow-auto max-h-[28rem]">
+            <table className="data-table">
               <thead>
-                <tr className="text-left text-[var(--muted)]">
-                  <th className="p-3">Row</th><th className="p-3">Client</th><th className="p-3">Filing</th>
-                  <th className="p-3">Period</th><th className="p-3">Due</th><th className="p-3">Status</th>
-                </tr>
+                <tr><th>Row</th><th>Client</th><th>Filing</th><th>Period</th><th>Due</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {checked.map((r) => (
-                  <tr key={r.n} className="border-t border-[var(--border)]">
-                    <td className="p-3">{r.n}</td>
-                    <td className="p-3">{r.data.clientName}{r.ok && !r.data.clientId ? ' (naya)' : ''}</td>
-                    <td className="p-3">{r.data.typeName || '-'}</td>
-                    <td className="p-3">{r.data.period || '-'}</td>
-                    <td className="p-3">{r.data.due || '-'}</td>
-                    <td className="p-3">{r.ok ? <span className="text-green-500">✅ OK</span> : <span className="text-red-500">❌ {r.error}</span>}</td>
+                  <tr key={r.n}>
+                    <td>{r.n}</td>
+                    <td>{r.data.clientName}{r.ok && !r.data.clientId ? <span className="badge badge-blue ml-2">naya</span> : null}</td>
+                    <td>{r.data.typeName || '-'}</td>
+                    <td>{r.data.period || '-'}</td>
+                    <td>{r.data.due || '-'}</td>
+                    <td>
+                      {r.ok
+                        ? <span className="badge badge-green">OK</span>
+                        : <span className="text-xs text-red-400">{r.error}</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
