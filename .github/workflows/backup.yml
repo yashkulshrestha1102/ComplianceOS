@@ -1,0 +1,28 @@
+name: Weekly database backup
+
+on:
+  schedule:
+    - cron: '30 21 * * 0'   # Har Sunday 21:30 UTC = Monday subah 3:00 IST
+  workflow_dispatch:         # Haath se bhi chala sakte ho
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump and encrypt
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          docker run --rm postgres:17 pg_dump "$DB_URL" --schema=public --no-owner --no-privileges > backup.sql
+          test -s backup.sql
+          gzip backup.sql
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" \
+              --symmetric --cipher-algo AES256 \
+              -o "backup-$(date +%F).sql.gz.gpg" backup.sql.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup
+          path: backup-*.sql.gz.gpg
+          retention-days: 60
