@@ -38,6 +38,7 @@ const groups = [
 const roleLabel = { admin: 'Super Admin', staff: 'Staff', client: 'Client' }
 const CLIENT_PATHS = ['/portal', '/notifications', '/settings', '/help']
 const ADMIN_PATHS = ['/team', '/filing-types']
+const PUBLIC_PATHS = ['/login', '/reset-password']
 
 function canAccess(path, role) {
   if (role === 'client') return CLIENT_PATHS.includes(path)
@@ -91,8 +92,12 @@ export default function AppShell({ children }) {
   // Page ka access check (network nahi lagta)
   useEffect(() => {
     setOpen(false)
-    if (!authChecked || pathname === '/login') return
-    if (!profile) { router.replace('/login'); return }
+    
+       if (!authChecked || PUBLIC_PATHS.includes(pathname)) return
+    if (!profile) {
+      router.replace(pathname === '/' ? '/login' : `/login?next=${encodeURIComponent(pathname)}`)
+      return
+    }
     if (!canAccess(pathname, profile.role)) router.replace(profile.role === 'client' ? '/portal' : '/')
   }, [authChecked, profile, pathname, router])
 
@@ -115,7 +120,7 @@ export default function AppShell({ children }) {
     window.dispatchEvent(new CustomEvent('global-search', { detail: text }))
   }
 
-  if (pathname === '/login') return children
+    if (PUBLIC_PATHS.includes(pathname)) return children
 
   if (!authChecked || !profile || !canAccess(pathname, profile.role)) {
     return (
