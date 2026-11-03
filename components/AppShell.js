@@ -80,6 +80,7 @@ export default function AppShell({ children }) {
     supabase.auth.getSession().then(({ data }) => loadProfile(data.session))
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') router.replace('/reset-password')
       if (event === 'SIGNED_OUT') { setProfile(null); setAuthChecked(true) }
       if (event === 'SIGNED_IN') {
         setAuthChecked(false)
