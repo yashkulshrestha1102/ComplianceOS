@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { FileText, Plus, Pencil, Trash2, Search, MessageCircle, Loader2 ,Paperclip } from 'lucide-react'
 import { PageHeader, EmptyState, Skeleton, StatusBadge, Modal } from '@/components/ui'
 import DocumentsModal from '@/components/DocumentsModal'
+import { fetchAll } from '@/lib/fetchAll'
+
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const todayStr = () => new Date().toLocaleDateString('en-CA')
@@ -99,17 +101,17 @@ export default function Filings() {
       setRole(me?.role || '')
     }
     const [c, t, p, f] = await Promise.all([
-      supabase.from('clients').select('id,name').order('name'),
-      supabase.from('filing_types').select('*').order('name'),
-      supabase.from('profiles').select('id,full_name').neq('role', 'client'),
-      supabase.from('filings')
-      .select('*, clients(name, phone), filing_types(name), filing_assignees(user_id, profiles(full_name)), filing_documents(count)')
-      .order('due_date'),
-    ])
-    setClients(c.data || [])
-    setTypes(t.data || [])
-    setPeople(p.data || [])
-    setFilings(f.data || [])
+  supabase.from('clients').select('id,name').order('name'),
+  supabase.from('filing_types').select('*').eq('active', true).order('name'),
+  supabase.from('profiles').select('id,full_name').neq('role', 'client'),
+  fetchAll(() => supabase.from('filings')
+    .select('*, clients(name, phone), filing_types(name), filing_assignees(user_id, profiles(full_name)), filing_documents(count)')
+    .order('due_date').order('id')),
+])
+setClients(c.data || [])
+setTypes(t.data || [])
+setPeople(p.data || [])
+setFilings(f || [])
   }
   useEffect(() => { load() }, [])
 

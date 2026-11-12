@@ -81,7 +81,7 @@ export default function Analytics() {
   useEffect(() => {
     fetchAll(() => supabase.from('filings')
       .select('id, due_date, status, filed_on, client_id, clients(name), filing_types(name), filing_assignees(user_id, profiles(full_name))')
-      .order('due_date'))
+      .order('due_date').order('id'))
       .then(setAll)
       .catch(() => setAll([]))
   }, [])

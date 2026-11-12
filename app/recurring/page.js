@@ -49,7 +49,7 @@ export default function Recurring() {
   async function load() {
     const [c, t, p, tp] = await Promise.all([
       supabase.from('clients').select('id,name').order('name'),
-      supabase.from('filing_types').select('*').order('name'),
+      supabase.from('filing_types').select('*').eq('active', true).order('name'),
       supabase.from('profiles').select('id,full_name').neq('role', 'client'),
       supabase.from('recurring_templates').select('*, clients(name), filing_types(name)').order('created_at', { ascending: false }),
     ])
