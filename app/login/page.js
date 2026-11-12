@@ -30,7 +30,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'red')
+    let saved = localStorage.getItem('theme') || 'teal'
+if (saved === 'red') saved = 'teal'
+document.documentElement.setAttribute('data-theme', saved)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) router.replace(safeNext())
     })

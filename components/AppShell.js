@@ -7,7 +7,7 @@ import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3, Settings,
   HelpCircle, ShieldCheck, Search, Leaf, LogOut, UserCog, Repeat, Upload, Menu, Briefcase,
-  ListChecks, Loader2,
+  ListChecks, Loader2, Waves, Sun,
 } from 'lucide-react'
 
 const groups = [
@@ -40,6 +40,14 @@ const CLIENT_PATHS = ['/portal', '/notifications', '/settings', '/help']
 const ADMIN_PATHS = ['/team', '/filing-types']
 const PUBLIC_PATHS = ['/login', '/reset-password']
 
+// ---- 3-Way Theme Config ----
+const THEMES = ['teal', 'jungle', 'light']
+const THEME_META = {
+  teal:   { label: 'Teal',   icon: Waves, next: 'Jungle' },
+  jungle: { label: 'Jungle', icon: Leaf,  next: 'Light'  },
+  light:  { label: 'Light',  icon: Sun,   next: 'Teal'   },
+}
+
 function canAccess(path, role) {
   if (role === 'client') return CLIENT_PATHS.includes(path)
   if (role === 'admin') return true
@@ -49,19 +57,22 @@ function canAccess(path, role) {
 export default function AppShell({ children }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [theme, setTheme] = useState('red')
+  const [theme, setTheme] = useState('teal')
   const [profile, setProfile] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
 
+  // ---- Theme init (migrate old 'red' → 'teal') ----
   useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'red'
+    let saved = localStorage.getItem('theme') || 'teal'
+    if (saved === 'red') saved = 'teal' // legacy migration
+    if (!THEMES.includes(saved)) saved = 'teal'
     setTheme(saved)
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
-  // Login check: sirf ek baar, aur login/logout par
+  // ---- Auth check: once + on login/logout ----
   useEffect(() => {
     let active = true
 
@@ -90,11 +101,10 @@ export default function AppShell({ children }) {
     return () => { active = false; sub.subscription.unsubscribe() }
   }, [])
 
-  // Page ka access check (network nahi lagta)
+  // ---- Page access check ----
   useEffect(() => {
     setOpen(false)
-    
-       if (!authChecked || PUBLIC_PATHS.includes(pathname)) return
+    if (!authChecked || PUBLIC_PATHS.includes(pathname)) return
     if (!profile) {
       router.replace(pathname === '/' ? '/login' : `/login?next=${encodeURIComponent(pathname)}`)
       return
@@ -102,8 +112,10 @@ export default function AppShell({ children }) {
     if (!canAccess(pathname, profile.role)) router.replace(profile.role === 'client' ? '/portal' : '/')
   }, [authChecked, profile, pathname, router])
 
+  // ---- 3-way theme cycle ----
   function toggleTheme() {
-    const next = theme === 'red' ? 'jungle' : 'red'
+    const idx = THEMES.indexOf(theme)
+    const next = THEMES[(idx + 1) % THEMES.length]
     setTheme(next)
     localStorage.setItem('theme', next)
     document.documentElement.setAttribute('data-theme', next)
@@ -121,7 +133,7 @@ export default function AppShell({ children }) {
     window.dispatchEvent(new CustomEvent('global-search', { detail: text }))
   }
 
-    if (PUBLIC_PATHS.includes(pathname)) return children
+  if (PUBLIC_PATHS.includes(pathname)) return children
 
   if (!authChecked || !profile || !canAccess(pathname, profile.role)) {
     return (
@@ -130,6 +142,10 @@ export default function AppShell({ children }) {
       </div>
     )
   }
+
+  const ThemeIcon = THEME_META[theme]?.icon || Waves
+  const themeLabel = THEME_META[theme]?.label || 'Teal'
+  const nextThemeLabel = THEME_META[theme]?.next || 'Jungle'
 
   const sidebar = (
     <div className="flex flex-col min-h-full p-4">
@@ -154,7 +170,9 @@ export default function AppShell({ children }) {
                   return (
                     <Link key={href} href={href}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
-                        active ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-white'
+                        active
+                          ? 'bg-[var(--accent)] text-[var(--accent-text)]'
+                          : 'text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--text)]'
                       }`}
                       style={active ? { boxShadow: '0 0 18px var(--glow)' } : {}}>
                       <Icon size={18} />
@@ -169,7 +187,7 @@ export default function AppShell({ children }) {
       </nav>
 
       <Link href="/settings" className="card p-3 mt-6 flex items-center gap-3 hover:border-[var(--accent)] transition">
-        <div className="w-10 h-10 rounded-full bg-[var(--accent)] text-white flex items-center justify-center font-bold">
+        <div className="w-10 h-10 rounded-full bg-[var(--accent)] text-[var(--accent-text)] flex items-center justify-center font-bold">
           {(profile.name || '?').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -209,10 +227,10 @@ export default function AppShell({ children }) {
           ) : <div className="flex-1" />}
 
           <button onClick={toggleTheme}
-            className="flex items-center gap-2 px-3 lg:px-4 py-2.5 rounded-full text-sm border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)]"
-            title="Theme badlo">
-            <Leaf size={16} />
-            <span className="hidden lg:inline">{theme === 'red' ? 'Switch to Jungle Theme' : 'Switch to Classic Theme'}</span>
+            className="flex items-center gap-2 px-3 lg:px-4 py-2.5 rounded-full text-sm border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
+            title={`Current: ${themeLabel}. Click for ${nextThemeLabel}`}>
+            <ThemeIcon size={16} />
+            <span className="hidden lg:inline">{themeLabel} → {nextThemeLabel}</span>
           </button>
 
           <NotificationBell />

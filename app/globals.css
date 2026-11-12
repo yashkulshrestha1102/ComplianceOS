@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ============================================================
+   THEME 1: TEAL (Default) — Deep ocean teal + sea green
+   ============================================================ */
 :root {
   --bg: #041318;
   --panel: #062027;
@@ -11,7 +14,17 @@
   --text: #e6fffb;
   --muted: #7da8ad;
   --good: #2dd4bf;
+
+  /* Theme-aware helper tokens */
+  --accent-text: #041318;      /* text on accent buttons */
+  --input-bg: #062027;
+  --selection-text: #041318;
+  --scrollbar-hover: #14b8a6;
 }
+
+/* ============================================================
+   THEME 2: JUNGLE — Deep forest green
+   ============================================================ */
 [data-theme="jungle"] {
   --bg: #040c06;
   --panel: #07130a;
@@ -20,9 +33,44 @@
   --accent: #22c55e;
   --accent-soft: rgba(34, 197, 94, 0.16);
   --glow: rgba(34, 197, 94, 0.2);
+  --text: #f4f4f5;
+  --muted: #9a9a9f;
+  --good: #22c55e;
+
+  --accent-text: #04130a;
+  --input-bg: #07130a;
+  --selection-text: #04130a;
+  --scrollbar-hover: #22c55e;
 }
 
+/* ============================================================
+   THEME 3: LIGHT — Clean cream + teal accents
+   ============================================================ */
+[data-theme="light"] {
+  --bg: #f5f7f8;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --border: #e2e8ec;
+  --accent: #0d9488;
+  --accent-soft: rgba(13, 148, 136, 0.10);
+  --glow: rgba(13, 148, 136, 0.10);
+  --text: #0f2027;
+  --muted: #64777f;
+  --good: #16a34a;
+
+  --accent-text: #ffffff;
+  --input-bg: #ffffff;
+  --selection-text: #ffffff;
+  --scrollbar-hover: #0d9488;
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
 html { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; }
 
 body {
   background: radial-gradient(ellipse at top right, var(--glow), transparent 45%), var(--bg);
@@ -32,24 +80,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: var(--accent); color: #041318; }
+::selection { background: var(--accent); color: var(--selection-text); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
-/* ---------- Cards ---------- */
+/* ============================================================
+   CARDS
+   ============================================================ */
 .card {
   background: linear-gradient(145deg, var(--card), var(--panel));
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+}
+[data-theme="light"] .card {
+  box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.08);
 }
 
-/* ---------- Forms ---------- */
+/* ============================================================
+   FORMS
+   ============================================================ */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 select,
 textarea {
-  background-color: var(--panel);
+  background-color: var(--input-bg);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -67,8 +122,8 @@ textarea:focus {
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.7; }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 1rem; height: 1rem; }
 input[type="date"] { color-scheme: dark; }
+html[data-theme="light"] input[type="date"] { color-scheme: light; }
 
-/* Search jaise "bina border" wale inputs */
 input.bare, input[style*="transparent"] {
   border: 0 !important;
   box-shadow: none !important;
@@ -79,15 +134,17 @@ input.bare, input[style*="transparent"] {
 
 .label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
 
-/* ---------- Buttons ---------- */
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
   padding: 0.55rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600;
   border: 1px solid transparent; cursor: pointer; transition: all 0.15s;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: #041318; box-shadow: 0 8px 20px -10px var(--glow); }
-.btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
+.btn-primary { background: var(--accent); color: var(--accent-text); box-shadow: 0 8px 20px -10px var(--glow); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-outline { border-color: var(--border); color: var(--text); }
 .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .btn-danger { color: #f87171; border-color: rgba(248, 113, 113, 0.35); }
@@ -95,18 +152,35 @@ input.bare, input[style*="transparent"] {
 .icon-btn { padding: 0.4rem; border-radius: 8px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
 .icon-btn:hover { background: var(--accent-soft); color: var(--text); }
 
-/* ---------- Badges ---------- */
+/* ============================================================
+   BADGES
+   ============================================================ */
 .badge {
   display: inline-flex; align-items: center; padding: 0.15rem 0.65rem; border-radius: 999px;
   font-size: 0.72rem; font-weight: 600; text-transform: capitalize; white-space: nowrap;
 }
-.badge-green { background: rgba(45, 212, 191, 0.15); color: #5eead4; }
-.badge-yellow { background: rgba(250, 204, 21, 0.15); color: #facc15; }
-.badge-red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-.badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
-.badge-gray { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+.badge-green { background: rgba(45, 212, 191, 0.15); color: #0d9488; }
+.badge-yellow { background: rgba(250, 204, 21, 0.18); color: #a16207; }
+.badge-red { background: rgba(248, 113, 113, 0.15); color: #dc2626; }
+.badge-blue { background: rgba(56, 189, 248, 0.15); color: #0284c7; }
+.badge-gray { background: rgba(156, 163, 175, 0.18); color: #64748b; }
 
-/* ---------- Table ---------- */
+/* Dark themes: brighter badge text */
+:root .badge-green { color: #5eead4; }
+:root .badge-yellow { color: #facc15; }
+:root .badge-red { color: #f87171; }
+:root .badge-blue { color: #38bdf8; }
+:root .badge-gray { color: #9ca3af; }
+[data-theme="jungle"] .badge-green { color: #4ade80; }
+[data-theme="jungle"] .badge-yellow { color: #facc15; }
+[data-theme="jungle"] .badge-red { color: #f87171; }
+[data-theme="jungle"] .badge-blue { color: #60a5fa; }
+[data-theme="jungle"] .badge-gray { color: #9ca3af; }
+/* light theme uses the darker default colors above */
+
+/* ============================================================
+   TABLE
+   ============================================================ */
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 .data-table th {
   text-align: left; padding: 0.75rem 1rem; color: var(--muted); font-weight: 600; font-size: 0.72rem;
@@ -116,7 +190,9 @@ input.bare, input[style*="transparent"] {
 .data-table tbody tr:last-child td { border-bottom: 0; }
 .data-table tbody tr:hover { background: var(--accent-soft); }
 
-/* ---------- Layout / loading ---------- */
+/* ============================================================
+   LAYOUT / LOADING
+   ============================================================ */
 .page { padding: 0 2rem 2.5rem; max-width: 80rem; margin: 0 auto; }
 @media (max-width: 768px) { .page { padding: 0 1rem 2rem; } }
 
@@ -126,17 +202,21 @@ input.bare, input[style*="transparent"] {
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
-/* ---------- Purane pages ke liye ---------- */
+/* ============================================================
+   LEGACY UTILITY OVERRIDES
+   ============================================================ */
 .bg-white { background-color: var(--card) !important; }
 .border { border-color: var(--border) !important; }
 .text-gray-500, .text-gray-600 { color: var(--muted) !important; }
-.bg-blue-600 { background-color: var(--accent) !important; border-radius: 10px; color: #041318 !important; }
+.bg-blue-600 { background-color: var(--accent) !important; border-radius: 10px; color: var(--accent-text) !important; }
 .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.12) !important; }
 .bg-blue-100 { background-color: rgba(56, 189, 248, 0.12) !important; }
 .bg-green-100 { background-color: rgba(45, 212, 191, 0.12) !important; }
 .bg-red-100 { background-color: rgba(239, 68, 68, 0.14) !important; }
 
-/* ---------- Print / PDF ---------- */
+/* ============================================================
+   PRINT / PDF — always light
+   ============================================================ */
 @media print {
   aside, header.sticky { display: none !important; }
   html, html[data-theme] {
