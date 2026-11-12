@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #042b36;
-  --panel: #053049;
-  --card: #0f1829;
-  --border: #1e2d4a;
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.16);
-  --glow: rgba(37, 99, 235, 0.28);
-  --text: #f4f6fb;
-  --muted: #94a3b8;
-  --good: #22c55e;
+  --bg: #041318;
+  --panel: #062027;
+  --card: #0a2e36;
+  --border: #114954;
+  --accent: #14b8a6;
+  --accent-soft: rgba(20, 184, 166, 0.16);
+  --glow: rgba(45, 212, 191, 0.28);
+  --text: #e6fffb;
+  --muted: #7da8ad;
+  --good: #2dd4bf;
 }
 [data-theme="jungle"] {
   --bg: #040c06;
@@ -32,7 +32,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: var(--accent); color: #fff; }
+::selection { background: var(--accent); color: #041318; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
@@ -86,7 +86,7 @@ input.bare, input[style*="transparent"] {
   border: 1px solid transparent; cursor: pointer; transition: all 0.15s;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 8px 20px -10px var(--glow); }
+.btn-primary { background: var(--accent); color: #041318; box-shadow: 0 8px 20px -10px var(--glow); }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
 .btn-outline { border-color: var(--border); color: var(--text); }
 .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
@@ -100,10 +100,10 @@ input.bare, input[style*="transparent"] {
   display: inline-flex; align-items: center; padding: 0.15rem 0.65rem; border-radius: 999px;
   font-size: 0.72rem; font-weight: 600; text-transform: capitalize; white-space: nowrap;
 }
-.badge-green { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.badge-green { background: rgba(45, 212, 191, 0.15); color: #5eead4; }
 .badge-yellow { background: rgba(250, 204, 21, 0.15); color: #facc15; }
 .badge-red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-.badge-blue { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+.badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
 .badge-gray { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
 
 /* ---------- Table ---------- */
@@ -126,16 +126,15 @@ input.bare, input[style*="transparent"] {
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
-/* ---------- Purane pages ke liye (jab tak unhe naya nahi banate) ---------- */
+/* ---------- Purane pages ke liye ---------- */
 .bg-white { background-color: var(--card) !important; }
 .border { border-color: var(--border) !important; }
 .text-gray-500, .text-gray-600 { color: var(--muted) !important; }
-.bg-blue-600 { background-color: var(--accent) !important; border-radius: 10px; }
+.bg-blue-600 { background-color: var(--accent) !important; border-radius: 10px; color: #041318 !important; }
 .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.12) !important; }
-.bg-blue-100 { background-color: rgba(59, 130, 246, 0.12) !important; }
-.bg-green-100 { background-color: rgba(34, 197, 94, 0.12) !important; }
+.bg-blue-100 { background-color: rgba(56, 189, 248, 0.12) !important; }
+.bg-green-100 { background-color: rgba(45, 212, 191, 0.12) !important; }
 .bg-red-100 { background-color: rgba(239, 68, 68, 0.14) !important; }
-
 
 /* ---------- Print / PDF ---------- */
 @media print {
