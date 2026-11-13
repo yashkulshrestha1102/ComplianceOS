@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { UserCog } from 'lucide-react'
+import { UserCog, SlidersHorizontal } from 'lucide-react'
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui'
 import { toast } from '@/components/Feedback'
+import UserAccessModal from '@/components/UserAccessModal'
 
 export default function Team() {
   const [me, setMe] = useState(null)
@@ -11,6 +12,7 @@ export default function Team() {
   const [clients, setClients] = useState([])
   const [roles, setRoles] = useState([])
   const [teams, setTeams] = useState([])
+  const [accessFor, setAccessFor] = useState(null)
 
   async function load() {
     const { data: s } = await supabase.auth.getSession()
@@ -32,34 +34,36 @@ export default function Team() {
   async function update(id, patch) {
     const { error } = await supabase.from('profiles').update(patch).eq('id', id)
     if (error) toast.error(error.message)
-    else toast.success('Saved ✅')
+    else toast.success('Saved')
     load()
   }
 
   const changeRole = (p, value) =>
-    value === 'client' ? update(p.id, { role: 'client', role_id: null, team_id: null }) : update(p.id, { role_id: value })
+    value === 'client'
+      ? update(p.id, { role: 'client', role_id: null, team_id: null })
+      : update(p.id, { role_id: value })
 
   if (me && me.role !== 'admin') {
     return (
       <div className="page">
         <PageHeader icon={UserCog} title="Team & Roles" />
-        <div className="card"><EmptyState title="Only Super Admins can access this page" /></div>
+        <div className="card"><EmptyState title="Only the Super Admin can access this page" /></div>
       </div>
     )
   }
 
   return (
     <div className="page">
-      <PageHeader icon={UserCog} title="Team & Roles" subtitle="Assign each user a role, team, and (for clients) a company" />
+      <PageHeader icon={UserCog} title="Team & Roles" subtitle="Give each user a role and a team, and a company for client accounts" />
 
       <div className="card p-5 mb-6 text-sm">
-        <div className="font-semibold mb-2">How to add a new user?</div>
+        <div className="font-semibold mb-2">How to add a new user</div>
         <ol className="list-decimal ml-5 text-[var(--muted)] space-y-1">
-          <li>In Supabase: <b>Authentication → Users → Add user</b> (email, password, <b>Auto Confirm</b> tick).</li>
-          <li>That user will appear here <b> but without a Role set</b>  they won't be able to see anything.</li>
-          <li>Set their role here. For a client, choose "Client (portal)" and also select the company.</li>
+          <li>In Supabase go to <b>Authentication → Users → Add user</b> (email, password, tick <b>Auto Confirm</b>).</li>
+          <li>The user appears here with <b>no role</b> and cannot see anything yet.</li>
+          <li>Choose their <b>role</b> below. For client accounts choose "Client (portal)" and select the <b>company</b>.</li>
+          <li>Use <b>Special access</b> to allow or block individual permissions for one person, and the Access button on the Clients page to assign clients.</li>
         </ol>
-        <p className="mt-3 text-xs text-[var(--muted)]">Role permissions are managed on the "Roles & Permissions" page.</p>
       </div>
 
       <div className="card overflow-x-auto">
@@ -67,7 +71,9 @@ export default function Team() {
           <div className="p-4 space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : (
           <table className="data-table">
-            <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Company (for clients)</th><th>Joined</th></tr></thead>
+            <thead>
+              <tr><th>User</th><th>Role</th><th>Team</th><th>Company (client accounts)</th><th>Added</th><th></th></tr>
+            </thead>
             <tbody>
               {people.map((p) => {
                 const isClient = p.role === 'client'
@@ -79,7 +85,9 @@ export default function Team() {
                           {(p.full_name || p.email || '?').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold truncate">{p.full_name || '-'} {p.id === me?.id && <span className="text-xs text-[var(--muted)]">(you)</span>}</div>
+                          <div className="font-semibold truncate">
+                            {p.full_name || '-'} {p.id === me?.id && <span className="text-xs text-[var(--muted)]">(you)</span>}
+                          </div>
                           <div className="text-xs text-[var(--muted)] truncate">{p.email}</div>
                         </div>
                       </div>
@@ -87,7 +95,7 @@ export default function Team() {
                     <td>
                       <select value={isClient ? 'client' : p.role_id || ''} disabled={p.id === me?.id}
                         onChange={(e) => e.target.value && changeRole(p, e.target.value)}>
-                        {!isClient && !p.role_id && <option value="">Role not set</option>}
+                        {!isClient && !p.role_id && <option value="">No role assigned</option>}
                         {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                         <option value="client">Client (portal)</option>
                       </select>
@@ -109,6 +117,13 @@ export default function Team() {
                       ) : <span className="text-[var(--muted)]">-</span>}
                     </td>
                     <td className="text-sm text-[var(--muted)]">{new Date(p.created_at).toLocaleDateString('en-IN')}</td>
+                    <td>
+                      {!isClient && p.role_id && (
+                        <button className="btn btn-outline" style={{ padding: '0.3rem 0.7rem' }} onClick={() => setAccessFor(p)}>
+                          <SlidersHorizontal size={14} /> Special access
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 )
               })}
@@ -116,6 +131,8 @@ export default function Team() {
           </table>
         )}
       </div>
+
+      {accessFor && <UserAccessModal person={accessFor} onClose={() => setAccessFor(null)} />}
     </div>
   )
 }

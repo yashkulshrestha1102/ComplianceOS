@@ -2,9 +2,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchAll } from '@/lib/fetchAll'
-import { Users, Plus, Pencil, Trash2, Search, Loader2, FileText, ClipboardCheck } from 'lucide-react'
+import { Users, Plus, Pencil, Trash2, Search, Loader2, FileText, ClipboardCheck,ShieldCheck } from 'lucide-react'
 import { PageHeader, EmptyState, Skeleton, Modal } from '@/components/ui'
 import { toast, confirmDialog } from '@/components/Feedback'
+import ClientAccessModal from '@/components/ClientAccessModal'
 
 const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/
 const TAN_RE = /^[A-Z]{4}[0-9]{5}[A-Z]$/
@@ -163,6 +164,7 @@ export default function Clients() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [modal, setModal] = useState(null)
   const [regClient, setRegClient] = useState(null)
+  const [accessClient, setAccessClient] = useState(null)
   const [cfgClient, setCfgClient] = useState(null)
   const [err, setErr] = useState('')
   const [saving, setSaving] = useState(false)
@@ -351,7 +353,11 @@ export default function Clients() {
                       <div className="flex justify-end gap-1">
                         <button className="icon-btn" title="Compliance config" onClick={() => setCfgClient(c)}>
                        <ClipboardCheck size={16} />
-                      </button>
+                      </button>   {canEdit && (
+     <button className="icon-btn" title="Manage access" onClick={() => setAccessClient(c)}>
+       <ShieldCheck size={16} />
+     </button>
+   )}
                         {canEdit && <button className="icon-btn" title="Edit" onClick={() => openEdit(c)}><Pencil size={16} /></button>}
                         {role === 'admin' && (
                           <button className="icon-btn" title="Delete" onClick={() => remove(c)}>
@@ -370,6 +376,7 @@ export default function Clients() {
        {cfgClient && (
   <ComplianceConfigModal client={cfgClient} canEdit={canEdit} onClose={() => setCfgClient(null)} />
 )}
+   {accessClient && <ClientAccessModal client={accessClient} onClose={() => setAccessClient(null)} />}
       {regClient && (
         <RegistrationsModal client={regClient} canEdit={canEdit} onClose={() => setRegClient(null)} onChanged={load} />
       )}
