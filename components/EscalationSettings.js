@@ -39,7 +39,7 @@ export default function EscalationSettings() {
   async function save() {
     setMsg('')
     const days = [...new Set(daysText.split(',').map((x) => parseInt(x.trim())).filter((n) => n > 0))].sort((a, b) => a - b)
-    if (cfg.escalation_enabled && days.length === 0) return setMsg('Kam se kam ek din daalo, jaise 1,3,7')
+    if (cfg.escalation_enabled && days.length === 0) return setMsg('Enter at least one day, e.g., 1,3,7')
     setSaving(true)
     const { error } = await supabase.from('app_settings').update({
       escalation_enabled: cfg.escalation_enabled,
@@ -51,31 +51,31 @@ export default function EscalationSettings() {
     }).eq('id', 1)
     setSaving(false)
     setDaysText(days.join(','))
-    setMsg(error ? error.message : 'Escalation rules save ho gaye ✅')
+    setMsg(error ? error.message : 'Escalation rules saved ✅')
   }
 
   return (
     <div className="card p-5 space-y-4">
       <h2 className="font-semibold flex items-center gap-2">
-        <AlertTriangle size={18} className="text-amber-400" /> Escalation rules (overdue par senior ko alert)
+        <AlertTriangle size={18} className="text-amber-400" /> Escalation rules (alert seniors on overdue)
       </h2>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={cfg.escalation_enabled}
           onChange={(e) => setCfg({ ...cfg, escalation_enabled: e.target.checked })} />
-        Escalation chalu rakho
+        Enable escalation
       </label>
 
       <div>
-        <label className="label">Overdue ke kitne din baad alert? (comma se alag karo)</label>
+        <label className="label">Alert after how many days overdue? (comma-separated)</label>
         <input className="w-full" value={daysText} onChange={(e) => setDaysText(e.target.value)} placeholder="1,3,7" />
         <p className="text-xs text-[var(--muted)] mt-1">
-          Jaise 1,3,7 = due date nikalne ke 1st, 3rd aur 7th din. Har level par ek hi baar jayega.
+          e.g., 1,3,7 = 1st, 3rd, and 7th day after the due date. Each level fires only once.v
         </p>
       </div>
 
       <div>
-        <label className="label">Alert kahan bhejna hai?</label>
+        <label className="label">Where should the alert be sent?</label>
         <div className="flex flex-wrap gap-2">
           {CHANNELS.map(([id, label]) => (
             <label key={id} className="flex items-center gap-2 card px-3 py-2 text-sm cursor-pointer">
@@ -87,12 +87,12 @@ export default function EscalationSettings() {
       </div>
 
       <div>
-        <label className="label">Kis-kis ko alert jaye?</label>
+        <label className="label">Who should receive the alert?</label>
         <div className="flex flex-wrap gap-2">
           <label className="flex items-center gap-2 card px-3 py-2 text-sm cursor-pointer">
             <input type="checkbox" checked={cfg.escalate_to_admins}
               onChange={(e) => setCfg({ ...cfg, escalate_to_admins: e.target.checked })} />
-            Saare admins
+            All admins
           </label>
           {people.filter((p) => p.role !== 'admin').map((p) => (
             <label key={p.id} className="flex items-center gap-2 card px-3 py-2 text-sm cursor-pointer">
@@ -104,7 +104,7 @@ export default function EscalationSettings() {
       </div>
 
       <button onClick={save} disabled={saving} className="btn btn-primary">
-        {saving && <Loader2 size={16} className="animate-spin" />} Save karo
+        {saving && <Loader2 size={16} className="animate-spin" />} Save
       </button>
       {msg && <p className="text-sm">{msg}</p>}
     </div>

@@ -12,7 +12,7 @@ export const toast = {
   error: (message) => emit('app:toast', { type: 'error', message }),
 }
 
-export function confirmDialog({ title = 'Pakka?', message = '', confirmText = 'Haan, karo', danger = false } = {}) {
+export function confirmDialog({ title = 'Are you sure?', message = '', confirmText = 'Yes, do it', danger = false } = {}) {
   return new Promise((resolve) => emit('app:confirm', { title, message, confirmText, danger, resolve }))
 }
 

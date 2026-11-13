@@ -29,13 +29,13 @@ export default function ResetPassword() {
   async function submit(e) {
     e.preventDefault()
     setMsg('')
-    if (a.length < 8) return setMsg('Password kam se kam 8 characters ka rakho.')
-    if (a !== b) return setMsg('Dono password match nahi karte.')
+    if (a.length < 8) return setMsg('Password must be at least 8 characters.')
+    if (a !== b) return setMsg('Passwords do not match.')
     setSaving(true)
     const { error } = await supabase.auth.updateUser({ password: a })
     setSaving(false)
     if (error) return setMsg(error.message)
-    toast.success('Password badal gaya ✅')
+    toast.success('Password updated ✅')
     router.replace('/')
   }
 
@@ -50,33 +50,33 @@ export default function ResetPassword() {
         {state === 'waiting' && (
           <div className="card p-8 flex flex-col items-center gap-3">
             <Loader2 size={28} className="animate-spin text-[var(--accent)]" />
-            <p className="text-sm text-[var(--muted)]">Link check ho raha hai...</p>
+            <p className="text-sm text-[var(--muted)]">Verifying link...</p>
           </div>
         )}
 
         {state === 'invalid' && (
           <div className="card p-8 text-center space-y-4">
             <AlertCircle size={36} className="mx-auto text-red-400" />
-            <h2 className="text-xl font-semibold">Link kaam nahi kar raha</h2>
-            <p className="text-sm text-[var(--muted)]">Ye link purana ho gaya hai ya pehle hi use ho chuka hai. Naya reset link mangwao.</p>
-            <button className="btn btn-primary w-full" onClick={() => router.replace('/login')}>Login page par jao</button>
+            <h2 className="text-xl font-semibold">Link is not working</h2>
+            <p className="text-sm text-[var(--muted)]">This link has expired or has already been used. Request a new reset link.</p>
+            <button className="btn btn-primary w-full" onClick={() => router.replace('/login')}>Go to Login page</button>
           </div>
         )}
 
         {state === 'ready' && (
           <form onSubmit={submit} className="card p-8 space-y-5">
             <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> Naya password</h2>
-              <p className="text-sm text-[var(--muted)] mt-1">Kam se kam 8 characters ka password rakho.</p>
+              <h2 className="text-xl font-semibold flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> New password</h2>
+              <p className="text-sm text-[var(--muted)] mt-1">Use a password with at least 8 characters..</p>
             </div>
 
             <div>
-              <label className="label">Naya password</label>
+              <label className="label">New password</label>
               <input className="w-full" type="password" required autoFocus minLength={8} autoComplete="new-password"
                 value={a} onChange={(e) => setA(e.target.value)} />
             </div>
             <div>
-              <label className="label">Dobara likho</label>
+              <label className="label">Confirm password</label>
               <input className="w-full" type="password" required minLength={8} autoComplete="new-password"
                 value={b} onChange={(e) => setB(e.target.value)} />
             </div>
@@ -88,7 +88,7 @@ export default function ResetPassword() {
             )}
 
             <button disabled={saving} className="btn btn-primary w-full py-3">
-              {saving && <Loader2 size={16} className="animate-spin" />} Password save karo
+              {saving && <Loader2 size={16} className="animate-spin" />} Save password
             </button>
           </form>
         )}

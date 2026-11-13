@@ -28,7 +28,7 @@ export default function Notifications() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Notifications</h1>
         <button onClick={markAll} className="flex items-center gap-2 text-sm text-[var(--accent)]">
-          <CheckCheck size={16} /> Sab read mark karo
+          <CheckCheck size={16} /> Mark all as read
         </button>
       </div>
 
@@ -48,7 +48,7 @@ export default function Notifications() {
             {!n.is_read && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] mt-2" />}
           </div>
         ))}
-        {list.length === 0 && <p className="text-[var(--muted)]">Abhi koi notification nahi hai.</p>}
+        {list.length === 0 && <p className="text-[var(--muted)]">No notifications yet.</p>}
       </div>
     </div>
   )

@@ -7,7 +7,7 @@ export async function POST(request) {
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
   const { data: u, error } = await admin.auth.getUser(token)
-  if (error || !u?.user) return NextResponse.json({ error: 'Pehle login karo' }, { status: 401 })
+  if (error || !u?.user) return NextResponse.json({ error: 'Please log in first' }, { status: 401 })
 
   const linkToken = randomBytes(18).toString('base64url')
   await admin.from('telegram_link_tokens').delete().eq('user_id', u.user.id)

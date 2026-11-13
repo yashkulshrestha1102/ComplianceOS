@@ -25,9 +25,9 @@ export default function SystemStatus() {
   async function run(force) {
     if (force) {
       const ok = await confirmDialog({
-        title: 'Test mode chalayein?',
-        message: 'Isse duplicate-check bypass hota hai, to jin filings ka reminder pehle ja chuka hai unka dobara chala jayega.',
-        confirmText: 'Haan, chalao', danger: true,
+        title: 'Run test mode?',
+        message: 'This bypasses the duplicate check, so reminders already sent for filings will be sent again.',
+        confirmText: 'Yes, run it', danger: true,
       })
       if (!ok) return
     }
@@ -40,8 +40,8 @@ export default function SystemStatus() {
     })
     const json = await res.json().catch(() => ({}))
     setBusy(false)
-    if (!res.ok) return toast.error(json.error || 'Engine nahi chala')
-    toast.success(`Ho gaya: ${json.reminders_sent} reminder, ${json.escalations_sent} escalation, ${json.errors} error`)
+    if (!res.ok) return toast.error(json.error || 'Engine could not run')
+    toast.success(`Done: ${json.reminders_sent} reminders, ${json.escalations_sent} escalations, ${json.errors} errors`)
     load()
   }
 
@@ -52,22 +52,22 @@ export default function SystemStatus() {
     <div className="card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold flex items-center gap-2"><Activity size={18} className="text-[var(--accent)]" /> System (reminder engine)</h2>
-        {stale ? <span className="badge badge-red">36 ghante se nahi chala</span> : <span className="badge badge-green">Theek chal raha hai</span>}
+        {stale ? <span className="badge badge-red">Not run in 36 hours</span> : <span className="badge badge-green">Running fine</span>}
       </div>
 
       <div className="flex flex-wrap gap-3">
         <button className="btn btn-primary" onClick={() => run(false)} disabled={busy}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Engine abhi chalao
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Run engine now
         </button>
         <button className="btn btn-outline" onClick={() => run(true)} disabled={busy}>Test mode</button>
       </div>
 
       {runs === null ? null : runs.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">Abhi tak koi run nahi hua. Vercel ka cron roz subah chalayega.</p>
+        <p className="text-sm text-[var(--muted)]">No runs yet. The Vercel cron will run every morning.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Kab</th><th>Kaise</th><th>Nayi filings</th><th>Reminder</th><th>Escalation</th><th>Error</th></tr></thead>
+            <thead><tr><th>When</th><th>Trigger</th><th>New filings</th><th>Reminders</th><th>Escalations</th><th>Errors</th></tr></thead>
             <tbody>
               {runs.map((r) => (
                 <tr key={r.id}>

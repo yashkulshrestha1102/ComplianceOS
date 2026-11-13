@@ -32,7 +32,7 @@ export async function POST(request) {
   if (!m) return ok
 
   if (!m[1]) {
-    await send(chatId, 'Namaste! ComplianceOS app ke Settings page me "Telegram connect karo" dabake yahan aao.')
+    await send(chatId, 'Hello! Go to the Settings page in the ComplianceOS app, tap "Connect Telegram", and come back here.')
     return ok
   }
 
@@ -41,12 +41,12 @@ export async function POST(request) {
     .select('user_id, expires_at').eq('token', m[1]).maybeSingle()
 
   if (!row || new Date(row.expires_at) < new Date()) {
-    await send(chatId, 'Ye link purana ya galat hai. App me dobara "Telegram connect karo" dabao.')
+    await send(chatId, 'This link is old or invalid. Tap "Connect Telegram" again in the app.')
     return ok
   }
 
   await admin.from('profiles').update({ telegram_chat_id: chatId }).eq('id', row.user_id)
   await admin.from('telegram_link_tokens').delete().eq('token', m[1])
-  await send(chatId, '✅ ComplianceOS se Telegram connect ho gaya! Ab yahan due date reminders aayenge.')
+  await send(chatId, '✅ Telegram connected to ComplianceOS! Due-date reminders will now arrive here.')
   return ok
 }

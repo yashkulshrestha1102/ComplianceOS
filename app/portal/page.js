@@ -72,8 +72,8 @@ export default function Portal() {
     return (
       <div className="page">
         <PageHeader icon={Briefcase} title="Client Portal" />
-        <div className="card"><EmptyState title="Ye page client accounts ke liye hai"
-          text="Admin aur staff apne Dashboard aur Filings pages use karein." /></div>
+        <div className="card"><EmptyState title="This page is for client accounts"
+          text="Admins and staff should use the Dashboard and Filings pages." /></div>
       </div>
     )
   }
@@ -82,8 +82,8 @@ export default function Portal() {
     return (
       <div className="page">
         <PageHeader icon={Briefcase} title="Client Portal" />
-        <div className="card"><EmptyState title="Account abhi kisi company se jodha nahi hai"
-          text="Apne compliance manager se kaho ki wo aapka account company ke saath link kar de." /></div>
+        <div className="card"><EmptyState title="Account not yet linked to any company"
+          text="Ask your compliance manager to link your account with your company." /></div>
       </div>
     )
   }

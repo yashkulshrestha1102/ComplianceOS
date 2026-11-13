@@ -32,7 +32,7 @@ export default function Team() {
   async function update(id, patch) {
     const { error } = await supabase.from('profiles').update(patch).eq('id', id)
     if (error) toast.error(error.message)
-    else toast.success('Save ho gaya ✅')
+    else toast.success('Saved ✅')
     load()
   }
 
@@ -43,23 +43,23 @@ export default function Team() {
     return (
       <div className="page">
         <PageHeader icon={UserCog} title="Team & Roles" />
-        <div className="card"><EmptyState title="Is page ka access sirf Super Admin ko hai" /></div>
+        <div className="card"><EmptyState title="Only Super Admins can access this page" /></div>
       </div>
     )
   }
 
   return (
     <div className="page">
-      <PageHeader icon={UserCog} title="Team & Roles" subtitle="Har user ko role, team aur (client ke liye) company do" />
+      <PageHeader icon={UserCog} title="Team & Roles" subtitle="Assign each user a role, team, and (for clients) a company" />
 
       <div className="card p-5 mb-6 text-sm">
-        <div className="font-semibold mb-2">Naya user kaise jodein?</div>
+        <div className="font-semibold mb-2">How to add a new user?</div>
         <ol className="list-decimal ml-5 text-[var(--muted)] space-y-1">
-          <li>Supabase me <b>Authentication → Users → Add user</b> (email, password, <b>Auto Confirm</b> tick).</li>
-          <li>Wo user yahan dikhega, par <b>Role set nahi</b> hoga aur wo kuch nahi dekh payega.</li>
-          <li>Yahan se uska <b>role</b> chuno. Client ke liye "Client (portal)" chuno aur <b>company</b> bhi.</li>
+          <li>In Supabase: <b>Authentication → Users → Add user</b> (email, password, <b>Auto Confirm</b> tick).</li>
+          <li>That user will appear here <b> but without a Role set</b>  they won't be able to see anything.</li>
+          <li>Set their role here. For a client, choose "Client (portal)" and also select the company.</li>
         </ol>
-        <p className="mt-3 text-xs text-[var(--muted)]">Roles ki permissions "Roles & Permissions" page se badalti hain.</p>
+        <p className="mt-3 text-xs text-[var(--muted)]">Role permissions are managed on the "Roles & Permissions" page.</p>
       </div>
 
       <div className="card overflow-x-auto">
@@ -67,7 +67,7 @@ export default function Team() {
           <div className="p-4 space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : (
           <table className="data-table">
-            <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Company (client ke liye)</th><th>Joda gaya</th></tr></thead>
+            <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Company (for clients)</th><th>Joined</th></tr></thead>
             <tbody>
               {people.map((p) => {
                 const isClient = p.role === 'client'
@@ -79,7 +79,7 @@ export default function Team() {
                           {(p.full_name || p.email || '?').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold truncate">{p.full_name || '-'} {p.id === me?.id && <span className="text-xs text-[var(--muted)]">(aap)</span>}</div>
+                          <div className="font-semibold truncate">{p.full_name || '-'} {p.id === me?.id && <span className="text-xs text-[var(--muted)]">(you)</span>}</div>
                           <div className="text-xs text-[var(--muted)] truncate">{p.email}</div>
                         </div>
                       </div>
@@ -87,7 +87,7 @@ export default function Team() {
                     <td>
                       <select value={isClient ? 'client' : p.role_id || ''} disabled={p.id === me?.id}
                         onChange={(e) => e.target.value && changeRole(p, e.target.value)}>
-                        {!isClient && !p.role_id && <option value="">Role set nahi</option>}
+                        {!isClient && !p.role_id && <option value="">Role not set</option>}
                         {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                         <option value="client">Client (portal)</option>
                       </select>
@@ -95,7 +95,7 @@ export default function Team() {
                     <td>
                       {isClient ? <span className="text-[var(--muted)]">-</span> : (
                         <select value={p.team_id || ''} onChange={(e) => update(p.id, { team_id: e.target.value || null })}>
-                          <option value="">Koi team nahi</option>
+                          <option value="">No team</option>
                           {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                       )}
@@ -103,7 +103,7 @@ export default function Team() {
                     <td>
                       {isClient ? (
                         <select value={p.client_id || ''} onChange={(e) => update(p.id, { client_id: e.target.value || null })}>
-                          <option value="">Company chuno</option>
+                          <option value="">Select company</option>
                           {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       ) : <span className="text-[var(--muted)]">-</span>}

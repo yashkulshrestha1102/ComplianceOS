@@ -51,15 +51,15 @@ export default function Reminders() {
 
   const byDate = {}
   schedule.forEach((r) => { (byDate[r.date] = byDate[r.date] || []).push(r) })
-  const who = (f) => f.filing_assignees.map((a) => a.profiles?.full_name).filter(Boolean).join(', ') || 'Koi assign nahi'
+  const who = (f) => f.filing_assignees.map((a) => a.profiles?.full_name).filter(Boolean).join(', ') || 'Unassigned'
 
   return (
     <div className="page">
-      <PageHeader icon={AlarmClock} title="Reminders" subtitle="Aage kya jayega aur ab tak kya bheja gaya" />
+      <PageHeader icon={AlarmClock} title="Reminders" subtitle="What\'s coming up and what\'s been sent so far" />
 
       <div className="flex gap-2 mb-5">
-        <button className={`btn ${tab === 'upcoming' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('upcoming')}>Aane wale (14 din)</button>
-        <button className={`btn ${tab === 'sent' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('sent')}>Bheje gaye</button>
+        <button className={`btn ${tab === 'upcoming' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('upcoming')}>Upcoming (14 days)</button>
+        <button className={`btn ${tab === 'sent' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('sent')}>Sent</button>
       </div>
 
       {tab === 'upcoming' && (
@@ -67,7 +67,7 @@ export default function Reminders() {
           {overdue.length > 0 && (
             <div className="card p-4 flex items-center justify-between gap-3" style={{ borderColor: '#ef4444' }}>
               <div className="text-sm">
-                <b className="text-red-400">{overdue.length} overdue filings</b> par roz reminder jata hai, jab tak wo filed na ho.
+                <b className="text-red-400">{overdue.length} overdue filings</b> receive daily reminders until they are filed.
               </div>
             </div>
           )}
@@ -75,17 +75,17 @@ export default function Reminders() {
           {filings === null ? (
             <Skeleton className="h-40" />
           ) : Object.keys(byDate).length === 0 ? (
-            <div className="card"><EmptyState title="Agle 14 din me koi reminder nahi" text="Naye filings ya reminder days badalne par yahan schedule dikhega." /></div>
+            <div className="card"><EmptyState title="No reminders in the next 14 days" text="New filings or changes to reminder days will appear here." /></div>
           ) : (
             Object.entries(byDate).map(([date, items]) => (
               <div key={date} className="card p-4">
-                <div className="font-semibold mb-3">{fmt(date)} {date === todayStr() && <span className="badge badge-blue ml-2">Aaj</span>}</div>
+                <div className="font-semibold mb-3">{fmt(date)} {date === todayStr() && <span className="badge badge-blue ml-2">Today</span>}</div>
                 <div className="space-y-2">
                   {items.map(({ f, n }) => (
                     <div key={f.id + n} className="flex flex-wrap items-center gap-3 text-sm">
                       <span className="font-medium">{f.filing_types?.name}</span>
                       <span className="text-[var(--muted)]">· {f.clients?.name}</span>
-                      <span className="badge badge-gray">{n === 0 ? 'Due date wale din' : `${n} din pehle`}</span>
+                      <span className="badge badge-gray">{n === 0 ? 'On due date' : `${n} days before`}</span>
                       <span className="text-xs text-[var(--muted)]">{who(f)}</span>
                       <span className="flex gap-2 ml-auto">
                         {f.channels.filter((c) => c !== 'whatsapp').map((c) => {
@@ -107,10 +107,10 @@ export default function Reminders() {
           {log === null ? (
             <div className="p-4"><Skeleton className="h-40" /></div>
           ) : log.length === 0 ? (
-            <EmptyState title="Abhi tak koi reminder nahi bheja gaya" text="Cron chalte hi yahan record dikhega." />
+            <EmptyState title="No reminders sent yet" text="Records will appear here once the cron runs." />
           ) : (
             <table className="data-table">
-              <thead><tr><th>Kab</th><th>Filing</th><th>Kisko</th><th>Channel</th></tr></thead>
+              <thead><tr><th>When</th><th>Filing</th><th>To</th><th>Channel</th></tr></thead>
               <tbody>
                 {log.map((r) => (
                   <tr key={r.id}>
