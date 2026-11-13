@@ -7,13 +7,14 @@ import NotificationBell from './NotificationBell'
 import {
   LayoutDashboard, FileText, AlarmClock, Users, Bell, ClipboardList, BarChart3, Settings,
   HelpCircle, ShieldCheck, Search, Leaf, LogOut, UserCog, Repeat, Upload, Menu, Briefcase,
-  ListChecks, Loader2, Waves, Sun,
+  ListChecks, Loader2,Table as TableIcon, Waves, Sun,
 } from 'lucide-react'
 
 const groups = [
   { label: 'Overview', items: [
     { href: '/portal', label: 'My Portal', icon: Briefcase, roles: ['client'] },
     { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
+    { href: '/master', label: 'Master Sheet', icon: TableIcon, roles: ['admin', 'staff'] },
     { href: '/filings', label: 'My Filings', icon: FileText, roles: ['admin', 'staff'] },
     { href: '/reminders', label: 'Reminders', icon: AlarmClock, roles: ['admin', 'staff'] },
     { href: '/notifications', label: 'Notifications', icon: Bell },
@@ -30,6 +31,7 @@ const groups = [
   ] },
   { label: 'Account', items: [
     { href: '/team', label: 'Team & Roles', icon: UserCog, roles: ['admin'] },
+    { href: '/roles', label: 'Roles & Permissions', icon: ShieldCheck, roles: ['admin'] },
     { href: '/settings', label: 'Settings', icon: Settings },
     { href: '/help', label: 'Help & Support', icon: HelpCircle },
   ] },
@@ -37,7 +39,7 @@ const groups = [
 
 const roleLabel = { admin: 'Super Admin', staff: 'Staff', client: 'Client' }
 const CLIENT_PATHS = ['/portal', '/notifications', '/settings', '/help']
-const ADMIN_PATHS = ['/team', '/filing-types']
+const ADMIN_PATHS = ['/team', '/filing-types','/roles']
 const PUBLIC_PATHS = ['/login', '/reset-password']
 
 // ---- 3-Way Theme Config ----
@@ -81,10 +83,10 @@ export default function AppShell({ children }) {
         if (active) { setProfile(null); setAuthChecked(true) }
         return
       }
-      const { data: p } = await supabase.from('profiles')
-        .select('full_name, role').eq('id', session.user.id).single()
+            const { data: p } = await supabase.from('profiles')
+        .select('full_name, role, roles(name)').eq('id', session.user.id).single()
       if (!active) return
-      setProfile({ name: p?.full_name || session.user.email, email: session.user.email, role: p?.role || 'staff' })
+      setProfile({ name: p?.full_name || session.user.email, email: session.user.email, role: p?.role || 'staff', roleName: p?.roles?.name || '' })
       setAuthChecked(true)
     }
 
@@ -192,7 +194,7 @@ export default function AppShell({ children }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{profile.name}</div>
-          <div className="text-xs text-[var(--muted)]">{roleLabel[profile.role] || ''}</div>
+          <div className="text-xs text-[var(--muted)]">{profile.roleName || roleLabel[profile.role] || ''}</div>
         </div>
       </Link>
     </div>

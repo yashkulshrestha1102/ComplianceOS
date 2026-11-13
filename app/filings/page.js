@@ -5,6 +5,7 @@ import { FileText, Plus, Pencil, Trash2, Search, MessageCircle, Loader2 ,Papercl
 import { PageHeader, EmptyState, Skeleton, StatusBadge, Modal } from '@/components/ui'
 import DocumentsModal from '@/components/DocumentsModal'
 import { fetchAll } from '@/lib/fetchAll'
+import Link from 'next/link'
 
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -299,7 +300,7 @@ setFilings(f || [])
               {shown.map((f) => (
                 <tr key={f.id}>
                   <td>
-                    <div className="font-semibold">{f.filing_types?.name}</div>
+                    <Link href={`/filings/${f.id}`} className="font-semibold hover:text-[var(--accent)]">{f.filing_types?.name}</Link>
                     <div className="text-xs text-[var(--muted)]">{f.period || '-'}{f.arn_number ? ` · ARN ${f.arn_number}` : ''}</div>
                   </td>
                   <td>{f.clients?.name}</td>
