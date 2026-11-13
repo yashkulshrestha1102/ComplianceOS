@@ -81,12 +81,12 @@ export default function RolesPage() {
     setErr('')
     const name = modal.name.trim()
     const code = slug(name)
-    if (!name || !code) return setErr('Role ka naam likho')
+    if (!name || !code) return setErr('Enter a role name')
     setSaving(true)
     const { data, error } = await supabase.from('roles')
       .insert({ code, name, description: modal.description.trim() || null, legacy_role: 'staff', is_system: false })
       .select().single()
-    if (error) { setSaving(false); return setErr(error.code === '23505' ? 'Is naam ka role pehle se hai' : error.message) }
+    if (error) { setSaving(false); return setErr(error.code === '23505' ? 'A role with this name already exists' : error.message) }
     const base = rp[modal.base] || []
     if (base.length) {
       const res = await supabase.from('role_permissions').insert(base.map((c) => ({ role_id: data.id, permission_code: c, scope: 'all' })))
@@ -94,17 +94,17 @@ export default function RolesPage() {
     }
     setSaving(false)
     setModal(null)
-    toast.success('Role ban gaya ✅')
+    toast.success('Role created ✅')
     await load()
     setSelId(data.id)
   }
 
   async function removeRole(r) {
-    const ok = await confirmDialog({ title: `"${r.name}" role delete karein?`, confirmText: 'Delete', danger: true })
+    const ok = await confirmDialog({ title: `Delete the "${r.name}" role?`, confirmText: 'Delete', danger: true })
     if (!ok) return
     const { error } = await supabase.from('roles').delete().eq('id', r.id)
-    if (error) return toast.error(error.code === '23503' ? 'Is role ke users hain. Pehle unka role badlo.' : error.message)
-    toast.success('Role delete ho gaya')
+    if (error) return toast.error(error.code === '23503' ? 'Users are assigned to this role. Change their role first.' : error.message)
+    toast.success('Role deleted')
     load()
   }
 
@@ -113,7 +113,7 @@ export default function RolesPage() {
     const name = teamName.trim()
     if (!name) return
     const { error } = await supabase.from('teams').insert({ name })
-    if (error) return toast.error(error.code === '23505' ? 'Is naam ki team pehle se hai' : error.message)
+    if (error) return toast.error(error.code === '23505' ? 'A team with this name already exists' : error.message)
     setTeamName('')
     load()
   }
@@ -123,7 +123,7 @@ export default function RolesPage() {
     load()
   }
   async function removeTeam(t) {
-    const ok = await confirmDialog({ title: `"${t.name}" team delete karein?`, message: 'Members team se hat jayenge, users delete nahi honge.', confirmText: 'Delete', danger: true })
+    const ok = await confirmDialog({ title: `Delete the "${t.name}" team?`, message: 'Members will be removed from the team but users won\'t be deleted.', confirmText: 'Delete', danger: true })
     if (!ok) return
     const { error } = await supabase.from('teams').delete().eq('id', t.id)
     if (error) return toast.error(error.message)
@@ -134,14 +134,14 @@ export default function RolesPage() {
 
   return (
     <div className="page">
-      <PageHeader icon={ShieldCheck} title="Roles & Permissions" subtitle="Kaun kya dekh aur kar sakta hai, yahan se tay karo">
+      <PageHeader icon={ShieldCheck} title="Roles & Permissions" subtitle="Decide who can see and do what here">
         <button className="btn btn-primary" onClick={() => { setErr(''); setModal({ name: '', description: '', base: roles?.find((r) => r.code === 'viewer')?.id || '' }) }}>
-          <Plus size={16} /> Naya role
+          <Plus size={16} /> New role
         </button>
       </PageHeader>
 
       <div className="card p-4 mb-5 text-sm text-[var(--muted)]">
-        Abhi har permission <b>sabke records</b> par lagu hoti hai. "Sirf apni team / assigned" wala scope agla step hai.
+Currently every permission applies to all records. "Only my team / assigned" scope is planned for a future step.
       </div>
 
       {roles === null ? <Skeleton className="h-72" /> : (
@@ -168,11 +168,11 @@ export default function RolesPage() {
                   <h2 className="font-semibold text-lg">{sel.name}</h2>
                   <div className="flex gap-2">
                     {!sel.is_system && (
-                      <button className="btn btn-danger" onClick={() => removeRole(sel)}><Trash2 size={16} /> Role hatao</button>
+                      <button className="btn btn-danger" onClick={() => removeRole(sel)}><Trash2 size={16} /> Remove role</button>
                     )}
                     {!locked && (
                       <button className="btn btn-primary" disabled={!changed || saving} onClick={savePerms}>
-                        {saving && <Loader2 size={16} className="animate-spin" />} Save karo
+                        {saving && <Loader2 size={16} className="animate-spin" />} Save
                       </button>
                     )}
                   </div>
@@ -180,7 +180,7 @@ export default function RolesPage() {
 
                 {locked && (
                   <p className="text-sm text-amber-400 mb-4 flex items-center gap-2">
-                    <Lock size={14} /> Super Admin ke paas hamesha saari permissions rehti hain, ise badla nahi ja sakta.
+                    <Lock size={14} /> Super Admin always has all permissions — this cannot be changed.
                   </p>
                 )}
 
@@ -191,8 +191,8 @@ export default function RolesPage() {
                         <div className="text-sm font-semibold">{MODULES[mod] || mod}</div>
                         {!locked && (
                           <div className="flex gap-3 text-xs text-[var(--accent)]">
-                            <button onClick={() => setModule(items, true)}>Sab</button>
-                            <button onClick={() => setModule(items, false)}>Koi nahi</button>
+                            <button onClick={() => setModule(items, true)}>All</button>
+                            <button onClick={() => setModule(items, false)}>None</button>
                           </div>
                         )}
                       </div>
@@ -221,7 +221,7 @@ export default function RolesPage() {
             <div key={t.id} className="flex flex-wrap items-center gap-3 text-sm">
               <span className="font-medium w-48">{t.name}</span>
               <select value={t.leader_id || ''} onChange={(e) => patchTeam(t, { leader_id: e.target.value || null })}>
-                <option value="">Team leader chuno</option>
+                <option value="">Select team leader</option>
                 {people.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.id.slice(0, 6)}</option>)}
               </select>
               <span className="badge badge-gray">{people.filter((p) => p.team_id === t.id).length} members</span>
@@ -231,37 +231,37 @@ export default function RolesPage() {
               <button className="icon-btn ml-auto" onClick={() => removeTeam(t)}><Trash2 size={16} className="text-red-400" /></button>
             </div>
           ))}
-          {teams.length === 0 && <p className="text-sm text-[var(--muted)]">Abhi koi team nahi hai.</p>}
+          {teams.length === 0 && <p className="text-sm text-[var(--muted)]">No teams yet.</p>}
         </div>
         <form onSubmit={addTeam} className="flex gap-2 mt-4 max-w-md">
-          <input className="flex-1" placeholder="Nayi team ka naam" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+          <input className="flex-1" placeholder="New team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
           <button className="btn btn-outline"><Plus size={16} /> Add</button>
         </form>
-        <p className="text-xs text-[var(--muted)] mt-2">Users ko team me daalna "Team & Roles" page se hota hai.</p>
+        <p className="text-xs text-[var(--muted)] mt-2">Assign users to teams from the "Team & Roles" page.</p>
       </div>
 
       {modal && (
-        <Modal title="Naya custom role" onClose={() => setModal(null)}>
+        <Modal title="New custom role" onClose={() => setModal(null)}>
           <form onSubmit={createRole} className="space-y-4">
             <div>
-              <label className="label">Role ka naam *</label>
-              <input className="w-full" placeholder="Jaise: GST Specialist" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} />
+              <label className="label">Role name *</label>
+              <input className="w-full" placeholder="e.g., GST Specialist" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} />
             </div>
             <div>
               <label className="label">Description</label>
               <input className="w-full" value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} />
             </div>
             <div>
-              <label className="label">Permissions kis role se copy karein?</label>
+              <label className="label">Copy permissions from which role?</label>
               <select className="w-full" value={modal.base} onChange={(e) => setModal({ ...modal, base: e.target.value })}>
-                <option value="">Khali (koi permission nahi)</option>
+                <option value="">Empty (no permissions)</option>
                 {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
             {err && <p className="text-sm text-red-400">{err}</p>}
             <div className="flex justify-end gap-3">
               <button type="button" className="btn btn-outline" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" disabled={saving}>{saving && <Loader2 size={16} className="animate-spin" />} Role banao</button>
+              <button className="btn btn-primary" disabled={saving}>{saving && <Loader2 size={16} className="animate-spin" />} Create role</button>
             </div>
           </form>
         </Modal>

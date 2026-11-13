@@ -32,7 +32,7 @@ function DueCell({ f }) {
   }
   const d = daysLeft(f.due_date)
   const cls = d < 0 ? 'text-red-400' : d <= 5 ? 'text-amber-400' : 'text-[var(--muted)]'
-  const text = d < 0 ? `${-d} din overdue` : d === 0 ? 'Aaj due hai' : `${d} din baaki`
+  const text = d < 0 ? `${-d} days overdue` : d === 0 ? 'Due today' : `${d} days left`
   return (
     <div>
       <div>{fmt(f.due_date)}</div>
@@ -143,7 +143,7 @@ setFilings(f || [])
     e.preventDefault()
     setErr('')
     const days = parseDays(form.reminderDays)
-    if (days.length === 0) return setErr('Reminder days sahi daalo, jaise 5,2,0')
+    if (days.length === 0) return setErr('Enter valid reminder days, e.g., 5,2,0')
 
     setSaving(true)
     const { data: s } = await supabase.auth.getSession()
@@ -168,7 +168,7 @@ setFilings(f || [])
     setSaving(false)
     setShowAdd(false)
     setForm({ ...form, period: '', due_date: '', assignees: [] })
-    flash('Filing add ho gayi ✅')
+    flash('Filing added ✅')
     load()
   }
 
@@ -178,7 +178,7 @@ setFilings(f || [])
       status, filed_on: status === 'filed' ? todayStr() : null,
     }).eq('id', f.id)
     await supabase.from('filing_activity').insert({
-      filing_id: f.id, user_id: s.session.user.id, action: 'status_changed', note: `${f.status} se ${status}`,
+      filing_id: f.id, user_id: s.session.user.id, action: 'status_changed', note: `from ${f.status} to ${status}`,
     })
     load()
         if (status === 'filed') setDocFiling(f)
@@ -202,7 +202,7 @@ setFilings(f || [])
     e.preventDefault()
     setErr('')
     const days = parseDays(edit.reminderDays)
-    if (days.length === 0) return setErr('Reminder days sahi daalo, jaise 5,2,0')
+    if (days.length === 0) return setErr('Enter valid reminder days, e.g., 5,2,0')
 
     setSaving(true)
     const { data: s } = await supabase.auth.getSession()
@@ -219,21 +219,21 @@ setFilings(f || [])
       )
     }
     await supabase.from('filing_activity').insert({
-      filing_id: editing.id, user_id: s.session.user.id, action: 'edited', note: 'Filing edit hui',
+      filing_id: editing.id, user_id: s.session.user.id, action: 'edited', note: 'Filing edited',
     })
     setSaving(false)
     setEditing(null)
-    flash('Changes save ho gaye ✅')
+    flash('Changes saved ✅')
     load()
   }
 
   async function remove(f) {
-    if (!confirm(`${f.filing_types?.name} (${f.clients?.name}) delete karein? Ye wapas nahi aayegi.`)) return
+    if (!confirm(`Delete ${f.filing_types?.name} (${f.clients?.name})? This cannot be undone.`)) return
         const { data: docs } = await supabase.from('filing_documents').select('file_path').eq('filing_id', f.id)
     if (docs?.length) await supabase.storage.from('filing-proofs').remove(docs.map((d) => d.file_path))
     const { error } = await supabase.from('filings').delete().eq('id', f.id)
     if (error) return alert(error.message)
-    flash('Filing delete ho gayi')
+    flash('Filing deleted')
     load()
   }
 
@@ -253,10 +253,10 @@ setFilings(f || [])
 
   return (
     <div className="page">
-      <PageHeader icon={FileText} title="Filings" subtitle="Saari due dates, status aur assigned users ek jagah">
+      <PageHeader icon={FileText} title="Filings" subtitle="All due dates, statuses, and assigned users in one place">
         {canEdit && (
           <button className="btn btn-primary" onClick={() => { setErr(''); setShowAdd(true) }}>
-            <Plus size={16} /> Filing add karo
+            <Plus size={16} /> Add filing
           </button>
         )}
       </PageHeader>
@@ -267,7 +267,7 @@ setFilings(f || [])
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="card flex items-center gap-3 px-4 py-2.5 flex-1 min-w-[220px] max-w-md">
           <Search size={16} className="text-[var(--muted)]" />
-          <input className="bare w-full text-sm" placeholder="Client, filing ya period se dhundo..."
+          <input className="bare w-full text-sm" placeholder="Search by client, filing, or period..."
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -286,10 +286,10 @@ setFilings(f || [])
           <div className="p-4 space-y-3">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : shown.length === 0 ? (
           <EmptyState
-            title={all.length === 0 ? 'Abhi koi filing nahi hai' : 'Koi filing nahi mili'}
-            text={all.length === 0 ? 'Pehli filing add karo ya Bulk Import se ek saath bahut saari daalo.' : 'Search ya filter badal ke dekho.'}
+            title={all.length === 0 ? 'No filings yet' : 'No filings found'}
+            text={all.length === 0 ? '.Add your first filing, or use Bulk Import to add many at once.' : 'Try changing the search or filters.'}
             action={canEdit && all.length === 0 && (
-              <button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={16} /> Filing add karo</button>
+              <button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={16} /> Add filing</button>
             )} />
         ) : (
           <table className="data-table">
@@ -330,9 +330,9 @@ setFilings(f || [])
                         )}
                       </button>
                       {f.clients?.phone && (
-                        <a className="icon-btn" title="Client ko WhatsApp bhejo" target="_blank" rel="noreferrer"
+                        <a className="icon-btn" title="Send WhatsApp to client" target="_blank" rel="noreferrer"
                           href={`https://wa.me/${f.clients.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                            `Namaste ${f.clients.name}, ${f.filing_types?.name} (${f.period || ''}) ki due date ${fmt(f.due_date)} hai. Kripya documents jald bhej dein. - Businezexcellence`
+                            `Hello ${f.clients.name}, the due date for ${f.filing_types?.name} (${f.period || ''}) is ${fmt(f.due_date)}. Please send the documents soon. - Businezexcellence`
                           )}`}>
                           <MessageCircle size={16} className="text-green-500" />
                         </a>
@@ -357,28 +357,28 @@ setFilings(f || [])
       {filtered.length > limit && (
         <div className="text-center mt-4">
           <button className="btn btn-outline" onClick={() => setLimit(limit + 50)}>
-            Aur dikhao ({filtered.length - limit} baaki)
+            Show more (${filtered.length - limit} remaining)
           </button>
         </div>
       )}
 
       {/* Add popup */}
       {showAdd && (
-        <Modal title="Nayi filing" wide onClose={() => setShowAdd(false)}>
+        <Modal title="New filing" wide onClose={() => setShowAdd(false)}>
           <form onSubmit={add} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Client *</label>
                 <select className="w-full" required value={form.client_id}
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}>
-                  <option value="">Client chuno</option>
+                  <option value="">Select client</option>
                   {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="label">Filing type *</label>
                 <select className="w-full" required value={form.filing_type_id} onChange={(e) => pickType(e.target.value)}>
-                  <option value="">Filing type chuno</option>
+                  <option value="">Select filing type</option>
                   {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
@@ -395,22 +395,22 @@ setFilings(f || [])
             </div>
 
             <div>
-              <label className="label">Kitne din pehle reminder? (comma se alag karo)</label>
+              <label className="label">How many days before should reminders be sent? (comma-separated)</label>
               <input className="w-full" value={form.reminderDays}
                 onChange={(e) => setForm({ ...form, reminderDays: e.target.value })} />
-              <p className="text-xs text-[var(--muted)] mt-1">Jaise 6,3,1 = due date se 6, 3 aur 1 din pehle. 0 = due date wale din.</p>
+              <p className="text-xs text-[var(--muted)] mt-1">e.g., 6,3,1 = 6, 3, and 1 day before the due date. 0 = on the due date.</p>
             </div>
 
             <div>
-              <label className="label">Reminder kahan bhejna hai?</label>
+              <label className="label">Where should reminders be sent?</label>
               <CheckGroup options={channelOptions} value={form.channels} onToggle={toggleIn(form, setForm, 'channels')} />
             </div>
 
             <div>
-              <label className="label">Kis-kis user ko assign karna hai?</label>
+              <label className="label">Who should this filing be assigned to?</label>
               <CheckGroup options={peopleOptions} value={form.assignees} onToggle={toggleIn(form, setForm, 'assignees')} />
               {form.assignees.length === 0 && (
-                <p className="text-xs text-amber-400 mt-1">Kisi ko assign nahi karoge to koi reminder nahi jayega.</p>
+                <p className="text-xs text-amber-400 mt-1">If you don\'t assign anyone, no reminders will be sent.</p>
               )}
             </div>
 
@@ -418,7 +418,7 @@ setFilings(f || [])
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" className="btn btn-outline" onClick={() => setShowAdd(false)}>Cancel</button>
               <button className="btn btn-primary" disabled={saving}>
-                {saving && <Loader2 size={16} className="animate-spin" />} Filing add karo
+                {saving && <Loader2 size={16} className="animate-spin" />} Add filing
               </button>
             </div>
           </form>
@@ -457,7 +457,7 @@ setFilings(f || [])
             </div>
 
             <div>
-              <label className="label">ARN number (filing ke baad)</label>
+              <label className="label">ARN number (after filing)</label>
               <input className="w-full" value={edit.arn_number} onChange={(e) => setEdit({ ...edit, arn_number: e.target.value })} />
             </div>
             <div>

@@ -110,7 +110,7 @@ export default function Dashboard() {
     <div className="flex flex-wrap items-start justify-between gap-4 pt-2">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">{greet}{me.name ? `, ${me.name}` : ''}! 👋</h1>
-        <p className="text-[var(--muted)] mt-1">Aaj ki compliance sthiti ek nazar me.</p>
+        <p className="text-[var(--muted)] mt-1">Today\'s compliance status at a glance.</p>
       </div>
       {now && (
         <div className="card px-5 py-3 text-sm flex items-center gap-4">
@@ -130,9 +130,9 @@ export default function Dashboard() {
         {header}
         <div className="card p-10 text-center">
           <AlertTriangle size={32} className="mx-auto text-red-400" />
-          <p className="mt-3 font-semibold">Dashboard load nahi ho paya</p>
+          <p className="mt-3 font-semibold">Dashboard could not load</p>
           <p className="text-sm text-[var(--muted)] mt-1">{err}</p>
-          <button onClick={load} className="btn btn-primary mt-5"><RefreshCw size={16} /> Dobara try karo</button>
+          <button onClick={load} className="btn btn-primary mt-5"><RefreshCw size={16} /> Try again</button>
         </div>
       </div>
     )
@@ -184,13 +184,13 @@ export default function Dashboard() {
   const progress = Object.entries(byType).sort((a, b) => b[1].total - a[1].total).slice(0, 5)
 
   const checks = [
-    ['Koi filing overdue nahi', overdue.length === 0],
+    ['No overdue filings', overdue.length === 0],
     ['Har filing me user assigned hai', unassigned.length === 0],
-    ...(isAdmin ? [['Reminder engine chal raha hai', !stale]] : []),
+    ...(isAdmin ? [['Reminder engine is running', !stale]] : []),
   ]
 
   const actions = [
-    ['Filing add karo', Plus, '/filings?new=1'],
+    ['Add filing', Plus, '/filings?new=1'],
     ['Recurring template', Repeat, '/recurring'],
     ['Bulk import', Upload, '/import'],
     ['Reports', ClipboardList, '/reports'],
@@ -204,13 +204,13 @@ export default function Dashboard() {
       {(unassigned.length > 0 || stale) && (
         <div className="space-y-2">
           {unassigned.length > 0 && (
-            <Alert tone="amber" icon={UserX} href="/filings" cta="Filings dekho">
-              <b>{unassigned.length}</b> filing me koi user assigned nahi hai, inpar <b>koi reminder nahi jayega</b>.
+            <Alert tone="amber" icon={UserX} href="/filings" cta="View filings">
+              <b>{unassigned.length}</b> filings have no assigned user — no reminders will be sent for them.
             </Alert>
           )}
           {stale && (
-            <Alert tone="red" icon={Activity} href="/settings" cta="Settings kholo">
-              Reminder engine <b>36 ghante se nahi chala</b>. Vercel ke cron aur logs check karo.
+            <Alert tone="red" icon={Activity} href="/settings" cta="Open Settings">
+              Reminder engine <b>hasn\'t run in 36 hours</b>. Check the Vercel cron and logs.
             </Alert>
           )}
         </div>
@@ -218,21 +218,21 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Stat icon={FileText} value={open.length} label="Open filings" sub={`${total} me se`} color="#3b82f6" href="/filings" />
-        <Stat icon={Clock} value={dueSoon.length} label="Is hafte due (7 din)" color="#f59e0b" href="/filings" />
+        <Stat icon={Clock} value={dueSoon.length} label="Due this week (7 days)" color="#f59e0b" href="/filings" />
         <Stat icon={AlertTriangle} value={overdue.length} label="Overdue" color="#ef4444" href="/filings?status=overdue" />
-        <Stat icon={CheckCircle2} value={filedThisMonth} label="Is mahine filed" color="#22c55e" href="/filings?status=filed" />
+        <Stat icon={CheckCircle2} value={filedThisMonth} label="Filed this month" color="#22c55e" href="/filings?status=filed" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Upcoming */}
         <div className="card p-5 lg:col-span-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold flex items-center gap-2"><Bell size={18} className="text-[var(--accent)]" /> Agli due dates</h2>
-            <Link href="/filings" className="text-sm text-[var(--accent)] flex items-center gap-1">Sab dekho <ArrowRight size={14} /></Link>
+            <h2 className="font-semibold flex items-center gap-2"><Bell size={18} className="text-[var(--accent)]" /> Upcoming due dates</h2>
+            <Link href="/filings" className="text-sm text-[var(--accent)] flex items-center gap-1">View all <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-3">
             {upcoming.map((f) => <DeadlineRow key={f.id} f={f} />)}
-            {upcoming.length === 0 && <p className="text-[var(--muted)] text-sm">Aane wali koi due date nahi hai. 🎉</p>}
+            {upcoming.length === 0 && <p className="text-[var(--muted)] text-sm">No upcoming due dates. 🎉</p>}
           </div>
         </div>
 
@@ -263,7 +263,7 @@ export default function Dashboard() {
               ))}
             </ul>
           </div>
-          <p className="text-xs text-[var(--muted)] mt-4">Score = overdue na hone wali filings ka hissa.</p>
+          <p className="text-xs text-[var(--muted)] mt-4">Score = share of filings that are not overdue.</p>
         </div>
 
         {/* System (admin) / Brand */}
@@ -272,7 +272,7 @@ export default function Dashboard() {
             <h2 className="font-semibold flex items-center gap-2 mb-4"><Activity size={18} className="text-[var(--accent)]" /> Reminder engine</h2>
             {run ? (
               <div className="space-y-2 text-sm flex-1">
-                <div className="text-[var(--muted)]">Aakhri run</div>
+                <div className="text-[var(--muted)]">Last run</div>
                 <div className="font-semibold">{new Date(run.ran_at).toLocaleString('en-IN')}</div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <span className="badge badge-blue">{run.reminders_sent} reminder</span>
@@ -281,9 +281,9 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-[var(--muted)] flex-1">Abhi tak koi run nahi hua.</p>
+              <p className="text-sm text-[var(--muted)] flex-1">No runs yet.</p>
             )}
-            <Link href="/settings" className="btn btn-outline mt-4">Settings me dekho</Link>
+            <Link href="/settings" className="btn btn-outline mt-4">View in Settings</Link>
           </div>
         ) : (
           <div className="card lg:col-span-3 p-5 flex flex-col items-center justify-center text-center"
@@ -299,12 +299,12 @@ export default function Dashboard() {
         {/* My tasks */}
         <div className="card p-5 lg:col-span-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold flex items-center gap-2"><ListTodo size={18} className="text-[var(--accent)]" /> Mere kaam</h2>
+            <h2 className="font-semibold flex items-center gap-2"><ListTodo size={18} className="text-[var(--accent)]" /> My tasks</h2>
             <span className="badge badge-gray">{mine.length}</span>
           </div>
           <div className="space-y-3">
             {mine.slice(0, 5).map((f) => <DeadlineRow key={f.id} f={f} />)}
-            {mine.length === 0 && <p className="text-[var(--muted)] text-sm">Aap par koi pending kaam nahi hai. 🎉</p>}
+            {mine.length === 0 && <p className="text-[var(--muted)] text-sm">You have no pending tasks. 🎉</p>}
             {mine.length > 5 && <p className="text-xs text-[var(--muted)]">+ {mine.length - 5} aur kaam</p>}
           </div>
         </div>
@@ -331,7 +331,7 @@ export default function Dashboard() {
                 </div>
               )
             })}
-            {progress.length === 0 && <p className="text-[var(--muted)] text-sm">Filing add karte hi progress yahan dikhega.</p>}
+            {progress.length === 0 && <p className="text-[var(--muted)] text-sm">Progress will appear here once filings are added.</p>}
           </div>
         </div>
 

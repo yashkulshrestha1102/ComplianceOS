@@ -6,16 +6,16 @@ import { PageHeader, EmptyState, Skeleton, Modal } from '@/components/ui'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const PRESETS = {
-  'Har mahine': '1,2,3,4,5,6,7,8,9,10,11,12',
+  'Monthly': '1,2,3,4,5,6,7,8,9,10,11,12',
   'Quarterly (Jan, Apr, Jul, Oct)': '1,4,7,10',
   'Advance Tax (Mar, Jun, Sep, Dec)': '3,6,9,12',
-  'Saalana (sirf ek mahina)': '9',
+  'Annual (single month)': '9',
 }
 const CHANNELS = ['email', 'push', 'whatsapp', 'telegram']
-const LABELS = { email: 'Email', push: 'Popup', whatsapp: 'WhatsApp (button se)', telegram: 'Telegram' }
+const LABELS = { email: 'Email', push: 'Popup', whatsapp: 'WhatsApp (via button)', telegram: 'Telegram' }
 
 const nums = (s) => s.split(',').map((x) => parseInt(x.trim())).filter((n) => !isNaN(n))
-const monthsText = (arr) => (arr.length === 12 ? 'Har mahine' : arr.map((m) => MONTH_NAMES[m - 1]).join(', '))
+const monthsText = (arr) => (arr.length === 12 ? 'Every month' : arr.map((m) => MONTH_NAMES[m - 1]).join(', '))
 
 function CheckGroup({ options, value, onToggle }) {
   return (
@@ -80,9 +80,9 @@ export default function Recurring() {
     setErr('')
     const months = nums(form.months).filter((m) => m >= 1 && m <= 12)
     const days = nums(form.reminderDays)
-    if (form.client_ids.length === 0) return setErr('Kam se kam ek client chuno')
-    if (months.length === 0) return setErr('Months sahi daalo, jaise 1,4,7,10')
-    if (days.length === 0) return setErr('Reminder days sahi daalo, jaise 5,2,0')
+    if (form.client_ids.length === 0) return setErr('Select at least one client')
+    if (months.length === 0) return setErr('Enter valid months, e.g., 1,4,7,10')
+    if (days.length === 0) return setErr('Enter valid reminder days, e.g., 5,2,0')
 
     const rows = form.client_ids.map((cid) => ({
       client_id: cid,
@@ -100,7 +100,7 @@ export default function Recurring() {
     if (error) return setErr(error.message)
     setShowForm(false)
     setForm({ ...emptyForm, client_ids: [] })
-    flash(`${rows.length} template ban gaye ✅ Ab "Abhi generate karo" dabao.`)
+    flash(`${rows.length} template(s) created ✅ Now click "Generate now".`)
     load()
   }
 
@@ -113,7 +113,7 @@ export default function Recurring() {
     })
     const json = await res.json()
     setGenerating(false)
-    flash(res.ok ? `${json.created} nayi filings ban gayi ✅ (Filings page dekho)` : json.error)
+    flash(res.ok ? `${json.created} new filings created ✅ (see the Filings page)` : json.error)
   }
 
   async function toggleActive(t) {
@@ -122,7 +122,7 @@ export default function Recurring() {
   }
 
   async function remove(t) {
-    if (!confirm('Ye template delete karein? (Pehle se bani hui filings rahengi)')) return
+    if (!confirm('Delete this template? (Existing filings will remain)')) return
     await supabase.from('recurring_templates').delete().eq('id', t.id)
     load()
   }
@@ -135,12 +135,12 @@ export default function Recurring() {
   return (
     <div className="page">
       <PageHeader icon={Repeat} title="Recurring Filings"
-        subtitle="Ek baar template banao, filings har mahine apne aap ban jayengi">
+        subtitle="Create a template once; filings are generated automatically every month">
         <button className="btn btn-outline" onClick={generateNow} disabled={generating}>
-          {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />} Abhi generate karo
+          {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />} Generate now
         </button>
         <button className="btn btn-primary" onClick={() => { setErr(''); setShowForm(true) }}>
-          <Plus size={16} /> Naya template
+          <Plus size={16} /> New template
         </button>
       </PageHeader>
 
@@ -151,8 +151,8 @@ export default function Recurring() {
           <div className="p-4 space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : templates.length === 0 ? (
           <EmptyState title="Abhi koi template nahi hai"
-            text="Jaise GSTR-3B har mahine 20 tareekh ko. Ek baar banao, system roz agli due dates ki filings bana dega."
-            action={<button className="btn btn-primary" onClick={() => setShowForm(true)}><Plus size={16} /> Naya template</button>} />
+            text="e.g., GSTR-3B on the 20th of every month. Create once; the system will generate filings for upcoming due dates daily."
+            action={<button className="btn btn-primary" onClick={() => setShowForm(true)}><Plus size={16} /> New template</button>} />
         ) : (
           <table className="data-table">
             <thead>
@@ -167,15 +167,15 @@ export default function Recurring() {
                   </td>
                   <td>{t.clients?.name}</td>
                   <td>
-                    <div>Har {t.due_day} tareekh</div>
+                    <div>On the {t.due_day}th of each month</div>
                     <div className="text-xs text-[var(--muted)]">{monthsText(t.due_months)}</div>
                   </td>
-                  <td className="text-sm">{t.reminder_days.join(', ')} din pehle<div className="text-xs text-[var(--muted)]">{t.channels.join(', ')}</div></td>
+                  <td className="text-sm">{t.reminder_days.join(', ')} days before<div className="text-xs text-[var(--muted)]">{t.channels.join(', ')}</div></td>
                   <td className="text-xs">{names(t.assignee_ids)}</td>
                   <td>{t.active ? <span className="badge badge-green">Active</span> : <span className="badge badge-gray">Paused</span>}</td>
                   <td>
                     <div className="flex justify-end gap-1">
-                      <button className="icon-btn" title={t.active ? 'Pause karo' : 'Chalu karo'} onClick={() => toggleActive(t)}>
+                      <button className="icon-btn" title={t.active ? 'Pause' : 'Resume'} onClick={() => toggleActive(t)}>
                         {t.active ? <Pause size={16} /> : <Play size={16} />}
                       </button>
                       <button className="icon-btn" title="Delete" onClick={() => remove(t)}>
@@ -191,14 +191,14 @@ export default function Recurring() {
       </div>
 
       {showForm && (
-        <Modal wide title="Naya recurring template" onClose={() => setShowForm(false)}>
+        <Modal wide title="New recurring template" onClose={() => setShowForm(false)}>
           <form onSubmit={add} className="space-y-4">
             <div>
               <div className="flex items-center justify-between">
-                <label className="label">Kin clients ke liye? (kitne bhi chuno)</label>
+                <label className="label">For which clients? (choose any number)</label>
                 <button type="button" className="text-xs text-[var(--accent)]"
                   onClick={() => setForm({ ...form, client_ids: form.client_ids.length === clients.length ? [] : clients.map((c) => c.id) })}>
-                  Sab select / clear
+                  Select all / clear
                 </button>
               </div>
               <div className="max-h-40 overflow-y-auto">
@@ -210,49 +210,49 @@ export default function Recurring() {
               <div>
                 <label className="label">Filing type *</label>
                 <select className="w-full" required value={form.filing_type_id} onChange={(e) => pickType(e.target.value)}>
-                  <option value="">Filing type chuno</option>
+                  <option value="">Select filing type</option>
                   {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Due date (mahine ka kaunsa din) *</label>
+                <label className="label">Due date (which day of the month) *</label>
                 <input className="w-full" type="number" min="1" max="31" required value={form.due_day} onChange={set('due_day')} />
               </div>
             </div>
 
             <div>
-              <label className="label">Kaun-kaun se mahine me due hai?</label>
+              <label className="label">In which months is it due?</label>
               <select className="w-full mb-2" value=""
                 onChange={(e) => e.target.value && setForm({ ...form, months: PRESETS[e.target.value] })}>
-                <option value="">Jaldi chuno...</option>
+                <option value="">Quick presets...</option>
                 {Object.keys(PRESETS).map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
               <input className="w-full" value={form.months} onChange={set('months')} />
               <p className="text-xs text-[var(--muted)] mt-1">
-                Mahine ke number comma se (1=Jan ... 12=Dec). Abhi: {nums(form.months).map((m) => MONTH_NAMES[m - 1]).filter(Boolean).join(', ') || '-'}
+                Month numbers comma-separated (1=Jan ... 12=Dec). Current:{nums(form.months).map((m) => MONTH_NAMES[m - 1]).filter(Boolean).join(', ') || '-'}
               </p>
             </div>
 
             <div>
-              <label className="label">Period ka naam</label>
+              <label className="label">Period label</label>
               <input className="w-full" value={form.period_label} onChange={set('period_label')} />
               <p className="text-xs text-[var(--muted)] mt-1">
-                {'{prev_month}'} = pichla mahina (GST ke liye), {'{due_month}'} = due wala mahina, {'{year}'} = saal
+                {'{prev_month}'} = previous month (for GST), {'{due_month}'} = due month, {'{year}'} = year
               </p>
             </div>
 
             <div>
-              <label className="label">Kitne din pehle reminder?</label>
+              <label className="label">How many days before should reminders be sent?</label>
               <input className="w-full" value={form.reminderDays} onChange={set('reminderDays')} />
             </div>
 
             <div>
-              <label className="label">Reminder kahan bhejna hai?</label>
+              <label className="label">Where should reminders be sent?</label>
               <CheckGroup options={CHANNELS.map((c) => [c, LABELS[c]])} value={form.channels} onToggle={toggleIn('channels')} />
             </div>
 
             <div>
-              <label className="label">Kis-kis user ko assign karna hai?</label>
+              <label className="label">Who should the filing be assigned to?</label>
               <CheckGroup options={people.map((p) => [p.id, p.full_name || p.id.slice(0, 6)])} value={form.assignees} onToggle={toggleIn('assignees')} />
             </div>
 
@@ -260,7 +260,7 @@ export default function Recurring() {
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button>
               <button className="btn btn-primary" disabled={saving}>
-                {saving && <Loader2 size={16} className="animate-spin" />} Template banao
+                {saving && <Loader2 size={16} className="animate-spin" />} Create template
               </button>
             </div>
           </form>

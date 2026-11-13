@@ -42,7 +42,7 @@ export default function Settings() {
       if (p?.telegram_chat_id) {
         setTgId(p.telegram_chat_id)
         setWaiting(false)
-        toast.success('Telegram connect ho gaya ✅')
+        toast.success('Telegram connected ✅')
       } else if (n > 40) {
         setWaiting(false)
       }
@@ -54,26 +54,26 @@ export default function Settings() {
     e.preventDefault()
     let digits = phone.replace(/\D/g, '')
     if (digits.length === 10) digits = '91' + digits
-    if (digits && (digits.length < 10 || digits.length > 13)) return toast.error('Phone number galat hai')
+    if (digits && (digits.length < 10 || digits.length > 13)) return toast.error('Invalid phone number')
 
     setSaving(true)
     const { error } = await supabase.from('profiles').update({ full_name: name.trim(), phone: digits }).eq('id', uid)
     setSaving(false)
     if (error) return toast.error(error.message)
     setPhone(digits)
-    toast.success('Profile save ho gaya ✅')
+    toast.success('Profile saved ✅')
   }
 
   async function changePassword(e) {
     e.preventDefault()
-    if (pw.a.length < 8) return toast.error('Password kam se kam 8 characters ka rakho')
-    if (pw.a !== pw.b) return toast.error('Dono password match nahi karte')
+    if (pw.a.length < 8) return toast.error('Password must be at least 8 characters')
+    if (pw.a !== pw.b) return toast.error('Passwords do not match')
     setPwSaving(true)
     const { error } = await supabase.auth.updateUser({ password: pw.a })
     setPwSaving(false)
     if (error) return toast.error(error.message)
     setPw({ a: '', b: '' })
-    toast.success('Password badal gaya ✅')
+    toast.success('Password updated ✅')
   }
 
   async function connectTelegram() {
@@ -88,7 +88,7 @@ export default function Settings() {
     setLinking(false)
     if (!res.ok || !json.link) {
       w?.close()
-      return toast.error(json.error || 'Link nahi ban paya')
+      return toast.error(json.error || 'Could not create link')
     }
     if (w) w.location.href = json.link
     else window.location.href = json.link
@@ -97,27 +97,27 @@ export default function Settings() {
 
   async function disconnectTelegram() {
     const ok = await confirmDialog({
-      title: 'Telegram disconnect karein?',
-      message: 'Isse Telegram par reminders aana band ho jayenge.',
+      title: 'Disconnect Telegram?',
+      message: 'Reminders on Telegram will stop.',
       confirmText: 'Disconnect', danger: true,
     })
     if (!ok) return
     const { error } = await supabase.from('profiles').update({ telegram_chat_id: null }).eq('id', uid)
     if (error) return toast.error(error.message)
     setTgId(null)
-    toast.success('Telegram disconnect ho gaya')
+    toast.success('Telegram disconnected')
   }
 
   return (
     <div className="page">
-      <PageHeader icon={SettingsIcon} title="Settings" subtitle="Apna profile, password, Telegram aur alert rules" />
+      <PageHeader icon={SettingsIcon} title="Settings" subtitle="Your profile, password, Telegram, and alert rules" />
 
       <div className="max-w-2xl space-y-5">
         <form onSubmit={saveProfile} className="card p-5 space-y-4">
-          <h2 className="font-semibold flex items-center gap-2"><User size={18} className="text-[var(--accent)]" /> Mera profile</h2>
+          <h2 className="font-semibold flex items-center gap-2"><User size={18} className="text-[var(--accent)]" /> My profile</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Poora naam</label>
+              <label className="label">Full naam</label>
               <input className="w-full" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
@@ -130,44 +130,44 @@ export default function Settings() {
             <input className="w-full" placeholder="9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <button className="btn btn-primary" disabled={saving}>
-            {saving && <Loader2 size={16} className="animate-spin" />} Save karo
+            {saving && <Loader2 size={16} className="animate-spin" />} Save
           </button>
         </form>
 
         <form onSubmit={changePassword} className="card p-5 space-y-4">
-          <h2 className="font-semibold flex items-center gap-2"><KeyRound size={18} className="text-[var(--accent)]" /> Password badlo</h2>
+          <h2 className="font-semibold flex items-center gap-2"><KeyRound size={18} className="text-[var(--accent)]" /> Change password</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Naya password</label>
+              <label className="label">New password</label>
               <input className="w-full" type="password" autoComplete="new-password" minLength={8}
                 value={pw.a} onChange={(e) => setPw({ ...pw, a: e.target.value })} />
             </div>
             <div>
-              <label className="label">Dobara likho</label>
+              <label className="label">Confirm password</label>
               <input className="w-full" type="password" autoComplete="new-password" minLength={8}
                 value={pw.b} onChange={(e) => setPw({ ...pw, b: e.target.value })} />
             </div>
           </div>
           <button className="btn btn-primary" disabled={pwSaving || !pw.a}>
-            {pwSaving && <Loader2 size={16} className="animate-spin" />} Password badlo
+            {pwSaving && <Loader2 size={16} className="animate-spin" />} Change password
           </button>
         </form>
 
         <div className="card p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold flex items-center gap-2"><Send size={18} className="text-sky-400" /> Telegram reminders</h2>
-            {tgId ? <span className="badge badge-green">Connected</span> : <span className="badge badge-gray">Connect nahi hai</span>}
+            {tgId ? <span className="badge badge-green">Connected</span> : <span className="badge badge-gray">Not connected</span>}
           </div>
           {tgId ? (
-            <button onClick={disconnectTelegram} className="btn btn-danger">Disconnect karo</button>
+            <button onClick={disconnectTelegram} className="btn btn-danger">Disconnect</button>
           ) : (
             <>
               <p className="text-sm text-[var(--muted)]">
-                Button dabao, Telegram me bot khulega. Wahan <b>START</b> dabao. Connect hote hi yahan apne aap dikh jayega.
+                Tap the button to open the bot in Telegram. Press <b>START</b> there. Once connected, it will show up here automatically.
               </p>
               <button onClick={connectTelegram} disabled={linking || waiting} className="btn btn-primary">
                 {(linking || waiting) && <Loader2 size={16} className="animate-spin" />}
-                {waiting ? 'Connect hone ka intezaar...' : 'Telegram connect karo'}
+                {waiting ? 'Waiting for connection...' : 'Connect Telegram'}
               </button>
             </>
           )}

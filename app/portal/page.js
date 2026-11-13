@@ -36,7 +36,7 @@ function DueCell({ f }) {
   }
   const d = daysLeft(f.due_date)
   const cls = d < 0 ? 'text-red-400' : d <= 7 ? 'text-amber-400' : 'text-[var(--muted)]'
-  const text = d < 0 ? `${-d} din se overdue` : d === 0 ? 'Aaj due hai' : `${d} din baaki`
+  const text = d < 0 ? `${-d} days overdue` : d === 0 ? 'Due today' : `${d} days left`
   return (
     <div>
       <div>{fmt(f.due_date)}</div>
@@ -98,7 +98,7 @@ export default function Portal() {
   return (
     <div className="page">
       <PageHeader icon={Briefcase} title={company || 'Client Portal'}
-        subtitle={me?.full_name ? `Namaste ${me.full_name}, ye aapki compliance filings ki sthiti hai` : 'Aapki compliance filings ki sthiti'} />
+        subtitle={me?.full_name ? `Hello ${me.full_name}, here is the status of your compliance filings` : 'Status of your compliance filings'} />
 
       {filings === null ? (
         <div className="space-y-4">
@@ -109,14 +109,14 @@ export default function Portal() {
         <>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <Card icon={Hourglass} value={pending} label="Pending" color="#facc15" />
-            <Card icon={Clock} value={soon.length} label="7 din ke andar due" color="#fb923c" />
+            <Card icon={Clock} value={soon.length} label="Due within 7 days" color="#fb923c" />
             <Card icon={AlertTriangle} value={overdue.length} label="Overdue" color="#ef4444" />
             <Card icon={CheckCircle2} value={filed.length} label="Filed" color="#22c55e" />
           </div>
 
           <div className="card overflow-x-auto">
             {all.length === 0 ? (
-              <EmptyState title="Abhi koi filing nahi hai" text="Jaise hi aapki koi filing add hogi, yahan dikhegi." />
+              <EmptyState title="No filings yet" text="Your filings will appear here as soon as they are added." />
             ) : (
               <table className="data-table">
                 <thead>

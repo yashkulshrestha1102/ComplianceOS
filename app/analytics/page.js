@@ -155,11 +155,11 @@ export default function Analytics() {
 
   return (
     <div className="page">
-      <PageHeader icon={BarChart3} title="Analytics" subtitle="Kaam kaisa chal raha hai, ek nazar me">
+      <PageHeader icon={BarChart3} title="Analytics" subtitle="A quick overview of how things are going">
         <select value={range} onChange={(e) => setRange(e.target.value)}>
-          <option value="all">Saara data</option>
-          <option value="fy">Is saal (FY)</option>
-          <option value="last6">Pichhle 6 mahine se</option>
+          <option value="all">All data</option>
+          <option value="fy">This year (FY)</option>
+          <option value="last6">Last 6 months</option>
         </select>
       </PageHeader>
 
@@ -169,19 +169,19 @@ export default function Analytics() {
           <Skeleton className="h-64" />
         </div>
       ) : data.rows.length === 0 ? (
-        <div className="card"><EmptyState title="Abhi analytics ke liye data nahi hai" text="Filings add hote hi yahan charts dikhenge." /></div>
+        <div className="card"><EmptyState title="No data available for analytics yet" text="Charts will appear here once filings are added." /></div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <Kpi icon={FileText} value={data.rows.length} label="Total filings" color="#3b82f6" />
             <Kpi icon={CheckCircle2} value={data.counts.filed} label="Filed" color="#22c55e" />
             <Kpi icon={AlertTriangle} value={data.counts.overdue} label="Overdue" color="#ef4444" />
-            <Kpi icon={Timer} value={data.onTimeRate === null ? '-' : `${data.onTimeRate}%`} label="Time par filed" color="#a78bfa" />
+            <Kpi icon={Timer} value={data.onTimeRate === null ? '-' : `${data.onTimeRate}%`} label="Filed on time" color="#a78bfa" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="card p-5 lg:col-span-5">
-              <h2 className="font-semibold mb-4">Status ka batwara</h2>
+              <h2 className="font-semibold mb-4">Status breakdown</h2>
               <div className="flex items-center gap-6 flex-wrap">
                 <Donut data={donut} />
                 <ul className="space-y-2 text-sm">
@@ -198,10 +198,10 @@ export default function Analytics() {
 
             <div className="card p-5 lg:col-span-7">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold">Mahine-wise filings (due date ke hisaab se)</h2>
+                <h2 className="font-semibold">Monthly filings (by due date)</h2>
                 <div className="text-xs text-[var(--muted)] flex gap-3">
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-500" /> Filed</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--accent)' }} /> Baaki</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--accent)' }} /> Remaining</span>
                 </div>
               </div>
               <MonthBars months={data.months} />
@@ -210,7 +210,7 @@ export default function Analytics() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="card p-5">
-              <h2 className="font-semibold mb-4">Filing type ke hisaab se progress</h2>
+              <h2 className="font-semibold mb-4">Progress by filing type</h2>
               <div className="space-y-4">
                 {data.types.map((t) => {
                   const pct = Math.round((t.filed / t.total) * 100)
@@ -229,9 +229,9 @@ export default function Analytics() {
             </div>
 
             <div className="card p-5">
-              <h2 className="font-semibold mb-4">Sabse zyada overdue wale clients</h2>
+              <h2 className="font-semibold mb-4">Clients with most overdue filings</h2>
               {data.topOverdue.length === 0 ? (
-                <p className="text-sm text-green-400">Koi overdue nahi hai. 🎉</p>
+                <p className="text-sm text-green-400">No overdue filings. 🎉</p>
               ) : (
                 <div className="space-y-3">
                   {data.topOverdue.map(([name, n]) => (
@@ -248,11 +248,11 @@ export default function Analytics() {
           <div className="card overflow-x-auto">
             <div className="p-5 pb-2"><h2 className="font-semibold">Staff-wise performance</h2></div>
             {data.staff.length === 0 ? (
-              <p className="px-5 pb-5 text-sm text-[var(--muted)]">Abhi kisi filing me koi user assign nahi hai.</p>
+              <p className="px-5 pb-5 text-sm text-[var(--muted)]">No users are assigned to any filing yet.</p>
             ) : (
               <table className="data-table">
                 <thead>
-                  <tr><th>Staff</th><th>Assigned</th><th>Filed</th><th>Overdue</th><th>Time par filed</th></tr>
+                  <tr><th>Staff</th><th>Assigned</th><th>Filed</th><th>Overdue</th><th>Filed on time</th></tr>
                 </thead>
                 <tbody>
                   {data.staff.map((s) => (

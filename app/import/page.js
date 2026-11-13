@@ -44,14 +44,14 @@ function validate(raw, ctx, createClients) {
     const errors = []
     const clientName = String(r.client_name || '').trim()
     const clientId = clientByName[clientName.toLowerCase()] || null
-    if (!clientName) errors.push('client_name khali hai')
-    else if (!clientId && !createClients) errors.push('client nahi mila')
+    if (!clientName) errors.push('client_name is empty')
+    else if (!clientId && !createClients) errors.push('client not found')
 
     const type = typeByName[String(r.filing_type || '').trim().toLowerCase()]
-    if (!type) errors.push('filing_type nahi mila')
+    if (!type) errors.push('filing_type not found')
 
     const due = parseDate(r.due_date)
-    if (!due) errors.push('due_date galat (DD-MM-YYYY likho)')
+    if (!due) errors.push('invalid due_date (use DD-MM-YYYY)')
 
     let days = list(r.reminder_days).map((x) => parseInt(x)).filter((n) => !isNaN(n))
     if (days.length === 0) days = type ? type.default_reminder_days : [5, 2, 0]
@@ -59,20 +59,20 @@ function validate(raw, ctx, createClients) {
     let channels = list(r.channels).map((c) => c.toLowerCase())
     if (channels.length === 0) channels = ['email', 'push']
     const badCh = channels.filter((c) => !VALID_CHANNELS.includes(c))
-    if (badCh.length) errors.push('channel galat: ' + badCh.join(', '))
+    if (badCh.length) errors.push('invalid channel: ' + badCh.join(', '))
 
     const assigneeIds = []
     list(r.assignee_emails).forEach((em) => {
       const id = personByEmail[em.toLowerCase()]
       if (id) assigneeIds.push(id)
-      else errors.push('user nahi mila: ' + em)
+      else errors.push('user not found: ' + em)
     })
 
     const period = String(r.period || '').trim()
     if (!errors.length) {
       const key = `${clientId || 'new:' + clientName.toLowerCase()}|${type.id}|${due}|${period.toLowerCase()}`
-      if (clientId && existing.has(key)) errors.push('pehle se maujood (duplicate)')
-      else if (seen.has(key)) errors.push('file me dobara aayi')
+      if (clientId && existing.has(key)) errors.push('already exists (duplicate)')
+      else if (seen.has(key)) errors.push('appears twice in the file')
       seen.add(key)
     }
 
@@ -136,7 +136,7 @@ export default function ImportPage() {
     setBusy(true)
     setMsg('')
     try {
-      if (good.length === 0) throw new Error('Koi valid row nahi hai')
+      if (good.length === 0) throw new Error('No valid rows found')
       const { data: s } = await supabase.auth.getSession()
 
       // 1) Naye clients
@@ -180,7 +180,7 @@ export default function ImportPage() {
         await supabase.from('filing_activity').insert(part)
       }
 
-      setMsg(`${filingRows.length} filings import ho gayi ✅` + (newNames.length ? ` (${newNames.length} naye client bhi bane)` : ''))
+      setMsg(`${filingRows.length} filings imported ✅` + (newNames.length ? ` (${newNames.length} new clients created too)` : ''))
       setRaw([])
       setFileName('')
       await loadCtx()
@@ -199,30 +199,30 @@ export default function ImportPage() {
         <div className="card p-5 lg:col-span-2 space-y-4">
           <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[var(--border)] rounded-xl p-8 cursor-pointer hover:border-[var(--accent)] transition text-center">
             <Upload size={28} className="text-[var(--accent)]" />
-            <span className="font-semibold text-sm">{fileName || 'CSV file chuno'}</span>
-            <span className="text-xs text-[var(--muted)]">Excel me File → Save As → CSV UTF-8, phir yahan upload karo</span>
+            <span className="font-semibold text-sm">{fileName || 'Choose CSV file'}</span>
+            <span className="text-xs text-[var(--muted)]">In Excel: File → Save As → CSV UTF-8, then upload here</span>
             <input type="file" accept=".csv" className="hidden" onChange={onFile} />
           </label>
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={createClients} onChange={(e) => setCreateClients(e.target.checked)} />
-            Jo clients system me nahi hain unhe apne aap bana do
+            Auto-create clients that don\'t exist in the system
           </label>
         </div>
 
         <div className="card p-5 text-sm space-y-3">
-          <div className="font-semibold">Kaise karein?</div>
+          <div className="font-semibold">How to use?</div>
           <ol className="list-decimal ml-5 text-[var(--muted)] space-y-1">
-            <li>Sample CSV download karo.</li>
-            <li>Excel me apni filings bharo.</li>
-            <li>CSV UTF-8 me save karke upload karo.</li>
-            <li>Preview dekho, phir import dabao.</li>
+            <li>Download the sample CSV.</li>
+            <li>Fill in your filings in Excel.</li>
+            <li>Save as CSV UTF-8 and upload.</li>
+            <li>Review the preview, then click Import.</li>
           </ol>
           <button onClick={downloadTemplate} className="btn btn-outline"><Download size={16} /> Sample CSV</button>
           <ul className="text-xs text-[var(--muted)] list-disc ml-4 space-y-1">
-            <li><b>client_name</b> aur <b>filing_type</b> system ke naam se match hone chahiye.</li>
-            <li><b>due_date</b>: DD-MM-YYYY ya YYYY-MM-DD.</li>
-            <li>Ek se zyada values semicolon se: <b>5;2;0</b>. Khali chhodo to default lagega.</li>
+            <li><b>client_name</b> and <b>filing_type</b>  must match existing names in the system</li>
+            <li><b>due_date</b>: DD-MM-YYYY or YYYY-MM-DD.</li>
+            <li>Multiple values separated by semicolons:<b>5;2;0</b>. Leave blank to use defaults.</li>
           </ul>
         </div>
       </div>
@@ -232,12 +232,12 @@ export default function ImportPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div className="flex gap-2 text-sm">
               <span className="badge badge-gray">Total {checked.length}</span>
-              <span className="badge badge-green">{good.length} sahi</span>
-              <span className="badge badge-red">{checked.length - good.length} galat</span>
+              <span className="badge badge-green">{good.length} valid</span>
+              <span className="badge badge-red">{checked.length - good.length} invalid</span>
             </div>
             <button disabled={busy || good.length === 0} onClick={doImport} className="btn btn-primary">
               {busy && <Loader2 size={16} className="animate-spin" />}
-              {busy ? 'Import ho raha hai...' : `${good.length} sahi rows import karo`}
+              {busy ? 'Import ho raha hai...' : `${good.length} valid rows import karo`}
             </button>
           </div>
 
@@ -250,7 +250,7 @@ export default function ImportPage() {
                 {checked.map((r) => (
                   <tr key={r.n}>
                     <td>{r.n}</td>
-                    <td>{r.data.clientName}{r.ok && !r.data.clientId ? <span className="badge badge-blue ml-2">naya</span> : null}</td>
+                    <td>{r.data.clientName}{r.ok && !r.data.clientId ? <span className="badge badge-blue ml-2">new</span> : null}</td>
                     <td>{r.data.typeName || '-'}</td>
                     <td>{r.data.period || '-'}</td>
                     <td>{r.data.due || '-'}</td>

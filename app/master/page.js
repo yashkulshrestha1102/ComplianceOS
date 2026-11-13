@@ -20,7 +20,7 @@ const SERVICE = {
   suspended: ['badge-red', 'Suspended'],
 }
 const APPLIC = { applicable: 'Applicable', not_applicable: 'Not applicable', unknown: 'Pata nahi' }
-const SORTS = [['name', 'Naam (A-Z)'], ['overdue', 'Sabse zyada overdue'], ['pending', 'Sabse zyada pending']]
+const SORTS = [['name', 'Naam (A-Z)'], ['overdue', 'Most overdue'], ['pending', 'Most pending']]
 
 const csvCell = (v) => {
   let s = String(v ?? '')
@@ -40,11 +40,11 @@ function Detail({ clientId, clientName, depts, openKey, model }) {
         <div key={d.key}>
           <div className="text-sm font-semibold mb-2">{d.name}</div>
           {d.types.length === 0 ? (
-            <p className="text-xs text-[var(--muted)]">Is department me abhi koi filing type nahi hai. Filing Types page se add karo.</p>
+            <p className="text-xs text-[var(--muted)]">No filing types in this department yet. Add them on the Filing Types page.</p>
           ) : (
             <table className="data-table">
               <thead>
-                <tr><th>Form</th><th>Applicable</th><th>Service</th><th>Agli due date</th><th>Open</th><th>Overdue</th><th></th></tr>
+                <tr><th>Form</th><th>Applicable</th><th>Service</th><th>Next due date</th><th>Open</th><th>Overdue</th><th></th></tr>
               </thead>
               <tbody>
                 {d.types.map((t) => {
@@ -63,7 +63,7 @@ function Detail({ clientId, clientName, depts, openKey, model }) {
                           <>
                             <div>{fmt(next.due_date)}{next.period ? ` · ${next.period}` : ''}</div>
                             <div className={`text-xs ${left < 0 ? 'text-red-400' : left <= 7 ? 'text-amber-400' : 'text-[var(--muted)]'}`}>
-                              {left < 0 ? `${-left} din overdue` : left === 0 ? 'Aaj due hai' : `${left} din baaki`}
+                              {left < 0 ? `${-left} days  overdue` : left === 0 ? 'Due today' : `${left} days left`}
                             </div>
                           </>
                         ) : '-'}
@@ -71,7 +71,7 @@ function Detail({ clientId, clientName, depts, openKey, model }) {
                       <td>{f?.open.length || 0}</td>
                       <td className={f?.overdue ? 'text-red-400 font-semibold' : ''}>{f?.overdue || 0}</td>
                       <td>
-                        <Link className="text-xs text-[var(--accent)]" href={`/filings?q=${encodeURIComponent(clientName)}`}>Filings dekho</Link>
+                        <Link className="text-xs text-[var(--accent)]" href={`/filings?q=${encodeURIComponent(clientName)}`}>View filings</Link>
                       </td>
                     </tr>
                   )
@@ -113,7 +113,7 @@ export default function MasterSheet() {
       if (depts.error) throw depts.error
       setData({ clients, cfg, filings, types: types.data || [], depts: depts.data || [], entities: ent.data || [] })
     } catch (e) {
-      toast.error(e.message || 'Master sheet load nahi hui')
+      toast.error(e.message || 'Master sheet could not load')
       setData({ clients: [], cfg: [], filings: [], types: [], depts: [], entities: [] })
     }
   }
@@ -210,7 +210,7 @@ export default function MasterSheet() {
 
   return (
     <div className="page">
-      <PageHeader icon={TableIcon} title="Master Sheet" subtitle="Saare clients aur unki compliances ek nazar me">
+      <PageHeader icon={TableIcon} title="Master Sheet" subtitle="All clients and their compliances at a glance">
         <button className="btn btn-outline" onClick={load}><RefreshCw size={16} /> Refresh</button>
         <button className="btn btn-primary" disabled={rows.length === 0} onClick={exportCsv}><Download size={16} /> Excel (CSV)</button>
       </PageHeader>
@@ -222,25 +222,25 @@ export default function MasterSheet() {
         </div>
         <div className="card flex items-center gap-3 px-4 py-2.5 flex-1 min-w-[200px] max-w-sm">
           <Search size={16} className="text-[var(--muted)]" />
-          <input className="bare w-full text-sm" placeholder="Client naam ya PAN..." value={q}
+          <input className="bare w-full text-sm" placeholder="Client name or PAN..." value={q}
             onChange={(e) => { setQ(e.target.value); setLimit(50) }} />
         </div>
         <select value={entityFilter} onChange={(e) => { setEntityFilter(e.target.value); setLimit(50) }}>
-          <option value="all">Sab entity types</option>
+          <option value="all">All entity types</option>
           {(data?.entities || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLimit(50) }}>
           <option value="active">Active clients</option>
           <option value="inactive">Inactive</option>
           <option value="prospect">Prospect</option>
-          <option value="all">Sab</option>
+          <option value="all">All</option>
         </select>
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={onlyOverdue} onChange={(e) => { setOnlyOverdue(e.target.checked); setLimit(50) }} />
-          Sirf overdue wale
+          Only overdue
         </label>
         {view === 'matrix' && (
           <div className="relative">
@@ -258,8 +258,8 @@ export default function MasterSheet() {
         )}
         {view === 'nested' && shown.length > 0 && (
           <div className="flex gap-2">
-            <button className="btn btn-outline" onClick={expandAll}>Sab kholo</button>
-            <button className="btn btn-outline" onClick={() => setOpen({})}>Sab band karo</button>
+            <button className="btn btn-outline" onClick={expandAll}>Expand all</button>
+            <button className="btn btn-outline" onClick={() => setOpen({})}>Collapse all</button>
           </div>
         )}
       </div>
@@ -275,7 +275,7 @@ export default function MasterSheet() {
         {!data ? (
           <div className="p-4 space-y-3">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-10" />)}</div>
         ) : shown.length === 0 ? (
-          <EmptyState title="Koi client nahi mila" text="Search ya filter badal ke dekho." />
+          <EmptyState title="No clients found" text="Try changing the search or filters." />
         ) : (
           <table className="data-table">
             <thead>

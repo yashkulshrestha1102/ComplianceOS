@@ -31,7 +31,7 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
     setErr(''); setMsg('')
     const { error } = await supabase.from('filings').update({ arn_number: arn.trim() }).eq('id', filing.id)
     if (error) return setErr(error.message)
-    setMsg('ARN save ho gaya ✅')
+    setMsg('ARN saved ✅')
     onChanged?.()
   }
 
@@ -44,8 +44,8 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
     const { data: s } = await supabase.auth.getSession()
     let ok = 0
     for (const file of files) {
-      if (!ALLOWED.includes(file.type)) { setErr(`${file.name}: sirf PDF, PNG, JPG ya WEBP chalega`); continue }
-      if (file.size > MAX) { setErr(`${file.name}: 10 MB se badi hai`); continue }
+      if (!ALLOWED.includes(file.type)) { setErr(`${file.name}: only PDF, PNG, JPG or WEBP are allowed`); continue }
+      if (file.size > MAX) { setErr(`${file.name}: exceeds 10 MB`); continue }
 
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       const path = `${filing.id}/${crypto.randomUUID()}-${safe}`
@@ -67,7 +67,7 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
       })
       ok++
     }
-    if (ok) { setMsg(`${ok} file upload ho gayi ✅`); loadDocs(); onChanged?.() }
+    if (ok) { setMsg(`${ok} file(s) uploaded ✅`); loadDocs(); onChanged?.() }
     setBusy(false)
   }
 
@@ -80,7 +80,7 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
   }
 
   async function removeDoc(d) {
-    if (!confirm(`"${d.file_name}" delete karein?`)) return
+    if (!confirm(`Delete "${d.file_name}"?`)) return
     setErr('')
     const { error } = await supabase.storage.from(BUCKET).remove([d.file_path])
     if (error) return setErr(error.message)
@@ -108,16 +108,16 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
         {/* Upload */}
         {canEdit && (
           <div>
-            <label className="label">Proof upload karo</label>
+            <label className="label">Upload proof</label>
             <div className="flex flex-wrap gap-2 items-center">
               <select value={docType} onChange={(e) => setDocType(e.target.value)}>
                 {Object.entries(DOC_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
               <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={upload} />
               <button className="btn btn-primary" disabled={busy} onClick={() => fileRef.current?.click()}>
-                {busy ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} File chuno
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Choose file
               </button>
-              <span className="text-xs text-[var(--muted)]">PDF / Image, max 10 MB, ek saath kai files chal jayengi</span>
+              <span className="text-xs text-[var(--muted)]">PDF / Image, max 10 MB, multiple files allowed at once</span>
             </div>
           </div>
         )}
@@ -130,7 +130,7 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
           <div className="label">Uploaded files</div>
           <div className="space-y-2">
             {docs === null && <div className="skeleton h-12" />}
-            {docs && docs.length === 0 && <p className="text-sm text-[var(--muted)]">Abhi koi file nahi hai.</p>}
+            {docs && docs.length === 0 && <p className="text-sm text-[var(--muted)]">No files yet.</p>}
             {(docs || []).map((d) => (
               <div key={d.id} className="card p-3 flex items-center gap-3">
                 {d.content_type === 'application/pdf'
@@ -142,7 +142,7 @@ export default function DocumentsModal({ filing, canEdit, onClose, onChanged }) 
                     {DOC_TYPES[d.doc_type]} · {sizeText(d.file_size || 0)} · {new Date(d.created_at).toLocaleDateString('en-IN')}
                   </div>
                 </div>
-                <button className="icon-btn" title="Kholo / Download" onClick={() => openDoc(d)}><Download size={16} /></button>
+                <button className="icon-btn" title="Open / Download" onClick={() => openDoc(d)}><Download size={16} /></button>
                 {canEdit && (
                   <button className="icon-btn" title="Delete" onClick={() => removeDoc(d)}>
                     <Trash2 size={16} className="text-red-400" />

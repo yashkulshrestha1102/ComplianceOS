@@ -12,11 +12,11 @@ function safeNext() {
 
 function friendlyError(msg = '') {
   const m = msg.toLowerCase()
-  if (m.includes('invalid login credentials')) return 'Email ya password galat hai.'
-  if (m.includes('email not confirmed')) return 'Ye account abhi confirm nahi hua. Apne admin se kaho.'
-  if (m.includes('rate limit') || m.includes('too many')) return 'Bahut zyada koshish ho gayi. Thodi der baad dobara try karo.'
-  if (m.includes('fetch')) return 'Internet ya server ki dikkat hai. Dobara try karo.'
-  return msg || 'Kuch gadbad ho gayi. Dobara try karo.'
+  if (m.includes('invalid login credentials')) return 'Incorrect email or password.'
+  if (m.includes('email not confirmed')) return 'This account has not been confirmed yet. Contact your admin.'
+  if (m.includes('rate limit') || m.includes('too many')) return 'Too many attempts. Please try again later.'
+  if (m.includes('fetch')) return 'Network or server issue. Please try again.'
+  return msg || 'Something went wrong. Please try again.'
 }
 
 export default function Login() {
@@ -79,8 +79,8 @@ document.documentElement.setAttribute('data-theme', saved)
         {mode === 'login' && (
           <form onSubmit={handleLogin} className="card p-8 space-y-5">
             <div>
-              <h2 className="text-xl font-semibold">Wapas swagat hai 👋</h2>
-              <p className="text-sm text-[var(--muted)] mt-1">Apne account se login karo.</p>
+              <h2 className="text-xl font-semibold">Welcome back 👋</h2>
+              <p className="text-sm text-[var(--muted)] mt-1">Log in with your account.</p>
             </div>
 
             <div>
@@ -94,7 +94,7 @@ document.documentElement.setAttribute('data-theme', saved)
                 <label className="label" htmlFor="password">Password</label>
                 <button type="button" className="text-xs text-[var(--accent)] mb-1.5"
                   onClick={() => { setMsg(''); setMode('forgot') }}>
-                  Password bhool gaye?
+                  Forgot password?
                 </button>
               </div>
               <div className="relative">
@@ -104,11 +104,11 @@ document.documentElement.setAttribute('data-theme', saved)
                   onKeyUp={(e) => setCaps(e.getModifierState?.('CapsLock') || false)} />
                 <button type="button" onClick={() => setShow(!show)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
-                  aria-label={show ? 'Password chhupao' : 'Password dikhao'}>
+                  aria-label={show ? 'Hide password' : 'Show password'}>
                   {show ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {caps && <p className="text-xs text-amber-400 mt-1.5">Caps Lock on hai.</p>}
+              {caps && <p className="text-xs text-amber-400 mt-1.5">Caps Lock is on.</p>}
             </div>
 
             {msg && (
@@ -118,11 +118,11 @@ document.documentElement.setAttribute('data-theme', saved)
             )}
 
             <button disabled={loading} className="btn btn-primary w-full py-3">
-              {loading && <Loader2 size={16} className="animate-spin" />} {loading ? 'Ruko...' : 'Login'}
+              {loading && <Loader2 size={16} className="animate-spin" />} {loading ? 'Please wait...' : 'Login'}
             </button>
 
             <p className="text-xs text-center text-[var(--muted)]">
-              Account chahiye? Apne admin se sampark karo.
+              Need an account? Contact your admin.
             </p>
           </form>
         )}
@@ -131,11 +131,11 @@ document.documentElement.setAttribute('data-theme', saved)
           <form onSubmit={handleForgot} className="card p-8 space-y-5">
             <button type="button" className="flex items-center gap-1 text-sm text-[var(--muted)] hover:text-white"
               onClick={() => { setMsg(''); setMode('login') }}>
-              <ArrowLeft size={14} /> Wapas login par
+              <ArrowLeft size={14} /> Back to login
             </button>
             <div>
-              <h2 className="text-xl font-semibold">Password reset karo</h2>
-              <p className="text-sm text-[var(--muted)] mt-1">Apni email likho, hum reset link bhejenge.</p>
+              <h2 className="text-xl font-semibold">Reset password</h2>
+              <p className="text-sm text-[var(--muted)] mt-1">Enter your email and we\'ll send a reset link.</p>
             </div>
 
             <div>
@@ -151,7 +151,7 @@ document.documentElement.setAttribute('data-theme', saved)
             )}
 
             <button disabled={loading} className="btn btn-primary w-full py-3">
-              {loading && <Loader2 size={16} className="animate-spin" />} Reset link bhejo
+              {loading && <Loader2 size={16} className="animate-spin" />} Send reset link
             </button>
           </form>
         )}
@@ -161,11 +161,11 @@ document.documentElement.setAttribute('data-theme', saved)
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ background: 'var(--accent-soft)' }}>
               <MailCheck size={28} className="text-[var(--accent)]" />
             </div>
-            <h2 className="text-xl font-semibold">Email check karo</h2>
+            <h2 className="text-xl font-semibold">Check your email</h2>
             <p className="text-sm text-[var(--muted)]">
-              Agar <b>{email}</b> se account juda hai to reset link abhi aa jayega. Spam folder bhi dekh lena.
+              If <b>{email}</b> is linked to an account, a reset link will arrive shortly. Please check your Spam folder too.
             </p>
-            <button className="btn btn-outline w-full" onClick={() => { setMode('login'); setMsg('') }}>Wapas login par</button>
+            <button className="btn btn-outline w-full" onClick={() => { setMode('login'); setMsg('') }}>Back to login</button>
           </div>
         )}
       </div>

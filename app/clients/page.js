@@ -39,14 +39,14 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
     e.preventDefault()
     setErr('')
     const num = f.reg_number.trim().toUpperCase()
-    if (!num) return setErr('Registration number zaroori hai')
+    if (!num) return setErr('Registration number is required')
     if (f.reg_type === 'GSTIN') {
-      if (!GSTIN_RE.test(num)) return setErr('GSTIN galat hai (15 characters)')
+      if (!GSTIN_RE.test(num)) return setErr('Invalid GSTIN (must be 15 characters)')
       if (client.pan && num.slice(2, 12) !== client.pan) {
-        return setErr(`GSTIN ke andar ka PAN (${num.slice(2, 12)}) client ke PAN (${client.pan}) se match nahi karta`)
+        return setErr(`PAN inside the GSTIN (${num.slice(2, 12)}) doesn\'t match the client\'s PAN (${client.pan})`)
       }
     }
-    if (f.is_branch && !f.branch_name.trim()) return setErr('Branch ka naam likho')
+    if (f.is_branch && !f.branch_name.trim()) return setErr('Enter the branch name')
 
     setSaving(true)
     const { error } = await supabase.from('client_registrations').insert({
@@ -58,9 +58,9 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
       branch_name: f.is_branch ? n(f.branch_name) : null,
     })
     setSaving(false)
-    if (error) return setErr(error.code === '23505' ? 'Ye registration pehle se juda hua hai' : error.message)
+    if (error) return setErr(error.code === '23505' ? 'This registration is already linked' : error.message)
     setF({ ...f, reg_number: '', state: '', is_branch: false, branch_name: '' })
-    toast.success('Registration add ho gayi ✅')
+    toast.success('Registration added ✅')
     load()
     onChanged?.()
   }
@@ -74,7 +74,7 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
 
   async function remove(r) {
     const ok = await confirmDialog({
-      title: 'Registration hatayein?', message: `${r.reg_type}: ${r.reg_number}`, confirmText: 'Hatao', danger: true,
+      title: 'Remove registration?', message: `${r.reg_type}: ${r.reg_number}`, confirmText: 'Remove', danger: true,
     })
     if (!ok) return
     const { error } = await supabase.from('client_registrations').delete().eq('id', r.id)
@@ -87,7 +87,7 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
     <Modal wide title={`Registrations: ${client.name}`} onClose={onClose}>
       <div className="space-y-5">
         {list === null ? <div className="skeleton h-12" /> : list.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">Abhi koi registration nahi hai.</p>
+          <p className="text-sm text-[var(--muted)]">No registrations yet.</p>
         ) : (
           <div className="space-y-2">
             {list.map((r) => (
@@ -117,7 +117,7 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
 
         {canEdit && (
           <form onSubmit={add} className="card p-4 space-y-3">
-            <div className="text-sm font-semibold">Nayi registration</div>
+            <div className="text-sm font-semibold">New registration</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="label">Type</label>
@@ -136,17 +136,17 @@ function RegistrationsModal({ client, canEdit, onClose, onChanged }) {
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={f.is_branch} onChange={(e) => setF({ ...f, is_branch: e.target.checked })} />
-              Ye kisi branch ki registration hai
+              This is a branch registration
             </label>
             {f.is_branch && (
               <div>
-                <label className="label">Branch ka naam *</label>
+                <label className="label">Branch name *</label>
                 <input className="w-full" value={f.branch_name} onChange={(e) => setF({ ...f, branch_name: e.target.value })} />
               </div>
             )}
             {err && <p className="text-sm text-red-400">{err}</p>}
             <button className="btn btn-primary" disabled={saving}>
-              {saving && <Loader2 size={16} className="animate-spin" />} Add karo
+              {saving && <Loader2 size={16} className="animate-spin" />} Add
             </button>
           </form>
         )}
@@ -211,12 +211,12 @@ export default function Clients() {
     const email = modal.email.trim()
     const name = modal.name.trim()
 
-    if (!name) return setErr('Naam zaroori hai')
-    if (pan && !PAN_RE.test(pan)) return setErr('PAN galat hai (jaise ABCDE1234F)')
-    if (tan && !TAN_RE.test(tan)) return setErr('TAN galat hai (jaise ABCD12345E)')
-    if (cin && !CIN_RE.test(cin) && !LLPIN_RE.test(cin)) return setErr('CIN (21 characters) ya LLPIN (jaise AAB-1234) galat hai')
-    if (email && !/^\S+@\S+\.\S+$/.test(email)) return setErr('Email galat hai')
-    if (phone && (phone.length < 10 || phone.length > 13)) return setErr('Phone number galat hai')
+    if (!name) return setErr('Name is required')
+    if (pan && !PAN_RE.test(pan)) return setErr('Invalid PAN (e.g., ABCDE1234F)')
+    if (tan && !TAN_RE.test(tan)) return setErr('Invalid TAN (e.g., ABCD12345E)')
+    if (cin && !CIN_RE.test(cin) && !LLPIN_RE.test(cin)) return setErr('Invalid CIN (21 characters) or LLPIN (e.g., AAB-1234)')
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) return setErr('Invalid email')
+    if (phone && (phone.length < 10 || phone.length > 13)) return setErr('Invalid phone number')
 
     const row = {
       name,
@@ -243,20 +243,20 @@ export default function Clients() {
     setSaving(false)
     if (error) return setErr(error.message)
     setModal(null)
-    toast.success(modal.id ? 'Client update ho gaya ✅' : 'Client add ho gaya ✅ (ab Registrations jodo)')
+    toast.success(modal.id ? 'Client updated ✅' : 'Client added ✅ (now add Registrations)')
     load()
   }
 
   async function remove(c) {
     const ok = await confirmDialog({
-      title: `"${c.name}" delete karein?`,
-      message: 'Iske saare filings, templates aur registrations bhi hat jayenge. Delete ki jagah "Inactive" karna safe rehta hai.',
+      title: `Delete "${c.name}"?`,
+      message: 'All its filings, templates, and registrations will also be removed. Marking it "Inactive" is safer than deleting.',
       confirmText: 'Delete', danger: true,
     })
     if (!ok) return
     const { error } = await supabase.from('clients').delete().eq('id', c.id)
     if (error) return toast.error(error.message)
-    toast.success('Client delete ho gaya')
+    toast.success('Client deleted')
     load()
   }
 
@@ -286,10 +286,10 @@ export default function Clients() {
 
   return (
     <div className="page">
-      <PageHeader icon={Users} title="Clients" subtitle="Client master: ek baar bharo, har jagah use hoga">
+      <PageHeader icon={Users} title="Clients" subtitle="Client master: fill once, use everywhere">
         {canEdit && (
           <button className="btn btn-primary" onClick={() => { setErr(''); setModal({ ...empty }) }}>
-            <Plus size={16} /> Client add karo
+            <Plus size={16} /> Add client
           </button>
         )}
       </PageHeader>
@@ -297,11 +297,11 @@ export default function Clients() {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="card flex items-center gap-3 px-4 py-2.5 flex-1 min-w-[220px] max-w-md">
           <Search size={16} className="text-[var(--muted)]" />
-          <input className="bare w-full text-sm" placeholder="Naam, PAN, GSTIN ya email se dhundo..."
+          <input className="bare w-full text-sm" placeholder="Search by name, PAN, GSTIN, or email..."
             value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          {[['all', 'Sab'], ...STATUS.map(([v, l]) => [v, l])].map(([v, l]) => (
+          {[['all', 'All'], ...STATUS.map(([v, l]) => [v, l])].map(([v, l]) => (
             <button key={v} onClick={() => setStatusFilter(v)}
               className={`btn ${statusFilter === v ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.4rem 0.8rem' }}>
               {l}
@@ -314,10 +314,10 @@ export default function Clients() {
         {clients === null ? (
           <div className="p-4 space-y-3">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10" />)}</div>
         ) : shown.length === 0 ? (
-          <EmptyState title={q || statusFilter !== 'all' ? 'Koi client nahi mila' : 'Abhi koi client nahi hai'}
-            text={q || statusFilter !== 'all' ? 'Search ya filter badal ke dekho.' : 'Pehla client add karke shuru karo.'}
+          <EmptyState title={q || statusFilter !== 'all' ? 'No clients found' : 'No clients yet'}
+            text={q || statusFilter !== 'all' ? 'Try changing the search or filters.' : 'Add your first client to get started.'}
             action={canEdit && !q && statusFilter === 'all' && (
-              <button className="btn btn-primary" onClick={() => { setErr(''); setModal({ ...empty }) }}><Plus size={16} /> Client add karo</button>
+              <button className="btn btn-primary" onClick={() => { setErr(''); setModal({ ...empty }) }}><Plus size={16} /> Add client</button>
             )} />
         ) : (
           <table className="data-table">
@@ -375,18 +375,18 @@ export default function Clients() {
       )}
 
       {modal && (
-        <Modal wide title={modal.id ? 'Client edit karo' : 'Naya client'} onClose={() => setModal(null)}>
+        <Modal wide title={modal.id ? 'Edit client' : 'New client'} onClose={() => setModal(null)}>
           <form onSubmit={save} className="space-y-5">
             <div>
               <div className="text-sm font-semibold mb-2">Basic</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {field('name', 'Client / Company ka naam *', 'ABC Pvt Ltd')}
-                {field('legal_name', 'Legal name', 'Khali chhodo to naam hi lagega')}
+                {field('legal_name', 'Legal name', 'Leave blank to use the name itself')}
                 {field('trade_name', 'Trade name', '')}
                 <div>
                   <label className="label">Entity type</label>
                   <select className="w-full" value={modal.entity_type} onChange={(e) => setModal({ ...modal, entity_type: e.target.value })}>
-                    <option value="">Chuno</option>
+                    <option value="">Select</option>
                     {entityOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
@@ -407,7 +407,7 @@ export default function Clients() {
                 {field('tan', 'TAN', 'ABCD12345E', { maxLength: 10 })}
                 {field('cin_llpin', 'CIN / LLPIN', 'U12345MH2020PTC123456', { maxLength: 21 })}
               </div>
-              <p className="text-xs text-[var(--muted)] mt-1">GSTIN, PF, ESIC jaise numbers client save karne ke baad "Registrations" se jodo.</p>
+              <p className="text-xs text-[var(--muted)] mt-1">Add GSTIN, PF, ESIC, etc. via "Registrations" after saving the client</p>
             </div>
 
             <div>
@@ -419,7 +419,7 @@ export default function Clients() {
             </div>
 
             <div>
-              <div className="text-sm font-semibold mb-2">Address aur business</div>
+              <div className="text-sm font-semibold mb-2">Address and business</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {field('state', 'State', 'Uttar Pradesh')}
                 {field('business_activity', 'Business activity', '')}

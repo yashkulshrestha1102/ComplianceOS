@@ -81,8 +81,8 @@ export default function FilingTypes() {
     setErr('')
     const name = modal.name.trim()
     const days = parseDays(modal.days)
-    if (!name) return setErr('Naam zaroori hai')
-    if (days.length === 0) return setErr('Reminder days sahi daalo, jaise 5,2,0')
+    if (!name) return setErr('Name is required')
+    if (days.length === 0) return setErr('Enter valid reminder days, e.g., 5,2,0')
 
     const rule = { ...(modal.due_rule || {}) }
     if (modal.rule_note.trim()) rule.note = modal.rule_note.trim()
@@ -110,12 +110,12 @@ export default function FilingTypes() {
 
     if (error) {
       if (error.code === '23505') {
-        return setErr(/code/i.test(error.message) ? 'Ye code pehle se kisi aur filing type ka hai' : 'Is naam ka filing type pehle se hai')
+        return setErr(/code/i.test(error.message) ? 'This code is already used by another filing type' : 'A filing type with this name already exists')
       }
       return setErr(error.message)
     }
     setModal(null)
-    toast.success(modal.id ? 'Filing type update ho gaya ✅' : 'Filing type add ho gaya ✅')
+    toast.success(modal.id ? 'Filing type updated ✅' : 'Filing type added ✅')
     load()
   }
 
@@ -128,17 +128,17 @@ export default function FilingTypes() {
   async function remove(t) {
     const ok = await confirmDialog({
       title: `"${t.name}" delete karein?`,
-      message: 'Agar is type ki koi filing ya recurring template hai to delete nahi hoga. Delete ki jagah "Inactive" bhi kar sakte ho.',
+      message: 'If any filing or recurring template uses this type, it cannot be deleted. You can mark it "Inactive" instead.',
       confirmText: 'Delete', danger: true,
     })
     if (!ok) return
     const { error } = await supabase.from('filing_types').delete().eq('id', t.id)
     if (error) {
       return toast.error(
-        error.code === '23503' ? 'Is type ki filings ya templates maujood hain. Pehle unhe hatao, ya Inactive kar do.' : error.message
+        error.code === '23503' ? 'Filings or templates exist for this type. Remove them first, or mark it Inactive.' : error.message
       )
     }
-    toast.success('Filing type delete ho gaya')
+    toast.success('Filing type deleted')
     load()
   }
 
@@ -146,12 +146,12 @@ export default function FilingTypes() {
 
   return (
     <div className="page">
-      <PageHeader icon={ListChecks} title="Filing Types" subtitle="Departments ke hisaab se saari compliances, frequency aur rules">
-        <button className="btn btn-primary" onClick={openNew}><Plus size={16} /> Naya filing type</button>
+      <PageHeader icon={ListChecks} title="Filing Types" subtitle="All compliances, frequencies, and rules grouped by department">
+        <button className="btn btn-primary" onClick={openNew}><Plus size={16} /> New filing type</button>
       </PageHeader>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {[['all', 'Sab'], ...depts.map((d) => [d.id, d.name]), ['none', 'Department nahi']].map(([id, label]) => (
+        {[['all', 'All'], ...depts.map((d) => [d.id, d.name]), ['none', 'No department']].map(([id, label]) => (
           <button key={id} onClick={() => setDeptFilter(id)}
             className={`btn ${deptFilter === id ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.35rem 0.8rem' }}>
             {label}
@@ -163,12 +163,12 @@ export default function FilingTypes() {
         {types === null ? (
           <div className="p-4 space-y-3">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10" />)}</div>
         ) : rows.length === 0 ? (
-          <EmptyState title="Koi filing type nahi mila" text="Naya add karo ya upar ka department filter badlo."
-            action={<button className="btn btn-primary" onClick={openNew}><Plus size={16} /> Naya filing type</button>} />
+          <EmptyState title="No filing types found" text="Add a new one or change the department filter above."
+            action={<button className="btn btn-primary" onClick={openNew}><Plus size={16} /> New filing type</button>} />
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>Filing</th><th>Department</th><th>Frequency</th><th>Reminder (din pehle)</th><th>Rule</th><th>Status</th><th></th></tr>
+              <tr><th>Filing</th><th>Department</th><th>Frequency</th><th>Reminders (days before)</th><th>Rule</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
               {rows.map((t) => (
@@ -177,14 +177,14 @@ export default function FilingTypes() {
                     <div className="font-semibold">{t.name}</div>
                     <div className="text-xs text-[var(--muted)]">{t.code || '-'}</div>
                   </td>
-                  <td>{t.departments?.name || <span className="badge badge-yellow">Set nahi</span>}</td>
+                  <td>{t.departments?.name || <span className="badge badge-yellow">Not set</span>}</td>
                   <td>{freqLabel[t.frequency] || <span className="text-[var(--muted)]">-</span>}</td>
                   <td className="text-sm">{(t.default_reminder_days || []).join(', ')}</td>
                   <td className="text-xs text-[var(--muted)]">
-                    {t.rule_source ? `${t.rule_source}${t.rule_version ? ` · v${t.rule_version}` : ''}` : 'Review baaki'}
+                    {t.rule_source ? `${t.rule_source}${t.rule_version ? ` · v${t.rule_version}` : ''}` : 'Review pending'}
                   </td>
                   <td>
-                    <button onClick={() => toggleActive(t)} title="Active / Inactive badlo">
+                    <button onClick={() => toggleActive(t)} title="Toggle Active / Inactive">
                       {t.active ? <span className="badge badge-green">Active</span> : <span className="badge badge-gray">Inactive</span>}
                     </button>
                   </td>
@@ -204,7 +204,7 @@ export default function FilingTypes() {
       </div>
 
       {modal && (
-        <Modal wide title={modal.id ? 'Filing type edit karo' : 'Naya filing type'} onClose={() => setModal(null)}>
+        <Modal wide title={modal.id ? 'Edit filing type' : 'New filing type'} onClose={() => setModal(null)}>
           <form onSubmit={save} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -218,27 +218,27 @@ export default function FilingTypes() {
               <div>
                 <label className="label">Department</label>
                 <select className="w-full" value={modal.department_id} onChange={set('department_id')}>
-                  <option value="">Chuno</option>
+                  <option value="">Select</option>
                   {depts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="label">Frequency</label>
                 <select className="w-full" value={modal.frequency} onChange={set('frequency')}>
-                  <option value="">Abhi tay nahi</option>
+                  <option value="">Not decided yet</option>
                   {FREQ.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="label">Default reminder days (comma se alag)</label>
+              <label className="label">Default reminder days (comma-separated)</label>
               <input className="w-full" value={modal.days} onChange={set('days')} />
-              <p className="text-xs text-[var(--muted)] mt-1">Jaise 5,2,0 = due date se 5 din, 2 din pehle aur due date wale din.</p>
+              <p className="text-xs text-[var(--muted)] mt-1">e.g., 5,2,0 = 5 days before, 2 days before, and on the due date.</p>
             </div>
 
             <div>
-              <label className="label">Kin entity types par lagu? (kuch na chuno = abhi tay nahi)</label>
+              <label className="label">Applicable to which entity types? (leave all unchecked = not decided yet)</label>
               <div className="flex flex-wrap gap-2">
                 {entityOpts.map((o) => (
                   <label key={o.value} className="flex items-center gap-2 card px-3 py-2 text-sm cursor-pointer">
@@ -250,7 +250,7 @@ export default function FilingTypes() {
             </div>
 
             <div className="card p-4 space-y-3">
-              <div className="text-sm font-semibold">Due date rule (review ke baad bharo)</div>
+              <div className="text-sm font-semibold">Due date rule (fill in after review)</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
                   <label className="label">Source (act / notification / circular)</label>
@@ -262,20 +262,20 @@ export default function FilingTypes() {
                 </div>
               </div>
               <div>
-                <label className="label">Rule ka note</label>
+                <label className="label">Rule note</label>
                 <textarea className="w-full" rows={2} value={modal.rule_note} onChange={set('rule_note')} />
               </div>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={modal.active} onChange={(e) => setModal({ ...modal, active: e.target.checked })} />
-              Active (Inactive hone par naye filings me nahi dikhega)
+              Active (inactive types will not appear in new filings)
             </label>
 
             {err && <p className="text-sm text-red-400">{err}</p>}
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" className="btn btn-outline" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" disabled={saving}>
+              <button className="btn btn-primary" diAllled={saving}>
                 {saving && <Loader2 size={16} className="animate-spin" />} Save
               </button>
             </div>

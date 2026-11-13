@@ -122,9 +122,9 @@ export default function FilingDetails() {
   async function setStatus(field, value, title, labels) {
     if (field === 'filing_result' && ['filed_successfully', 'revised_rectified'].includes(value)) {
       const ok = await confirmDialog({
-        title: 'Filing submit mark karein?',
-        message: `Ye sach me government portal par ${value === 'filed_successfully' ? 'file ho chuki' : 'revise/rectify ho chuki'} hai?\n\nSirf tabhi mark karo jab acknowledgement mil gaya ho.`,
-        confirmText: 'Haan, mark karo',
+        title: 'Mark filing as submitted?',
+        message: `Has this actually been ${value === 'filed_successfully' ? 'filed' : 'revised/rectified'} on the government portal?\n\nOnly mark it once you have the acknowledgement.`,
+        confirmText: 'Yes, mark it',
       })
       if (!ok) return
     }
@@ -149,8 +149,8 @@ export default function FilingDetails() {
     }).eq('id', id)
     setBusy(false)
     if (error) return toast.error(error.message)
-    await logActivity('edited', 'Filing details update hui')
-    toast.success('Save ho gaya ✅')
+    await logActivity('edited', 'Filing details updated')
+    toast.success('Saved ✅')
     load()
   }
 
@@ -170,7 +170,7 @@ export default function FilingDetails() {
       done, done_by: done ? await uid() : null, done_at: done ? new Date().toISOString() : null,
     }).eq('id', it.id)
     if (error) return toast.error(error.message)
-    await logActivity('checklist', `${done ? 'Poora' : 'Wapas khola'}: ${it.title}`)
+    await logActivity('checklist', `${done ? 'Completed' : 'Reopened'}: ${it.title}`)
     load()
   }
 
@@ -182,7 +182,7 @@ export default function FilingDetails() {
 
   async function addReview(e) {
     e.preventDefault()
-    if (review.decision !== 'approved' && !review.comment.trim()) return toast.error('Comment likho')
+    if (review.decision !== 'approved' && !review.comment.trim()) return toast.error('Please write a comment')
     setBusy(true)
     const round = 1 + reviews.filter((r) => r.decision === 'changes_required').length
     const { error } = await supabase.from('filing_reviews').insert({
@@ -205,8 +205,8 @@ export default function FilingDetails() {
   if (missing) {
     return (
       <div className="page">
-        <div className="card mt-6"><EmptyState title="Ye filing nahi mili" text="Link galat hai ya filing delete ho chuki hai."
-          action={<Link href="/filings" className="btn btn-primary">Filings par jao</Link>} /></div>
+        <div className="card mt-6"><EmptyState title="Filing not found" text="The link is incorrect or the filing has been deleted."
+          action={<Link href="/filings" className="btn btn-primary">Go to Filings</Link>} /></div>
       </div>
     )
   }
@@ -222,7 +222,7 @@ export default function FilingDetails() {
   const open = f.status !== 'filed'
   const left = daysLeft(f.due_date)
   const dueText = !open ? `Filed${f.filed_on ? ` on ${fmt(f.filed_on)}` : ''}`
-    : left < 0 ? `${-left} din overdue` : left === 0 ? 'Aaj due hai' : `${left} din baaki`
+    : left < 0 ? `${-left} days overdue` : left === 0 ? 'Due today' : `${left} days left`
   const dueTone = !open ? 'text-green-400' : left < 0 ? 'text-red-400' : left <= 7 ? 'text-amber-400' : 'text-[var(--muted)]'
   const assignees = f.filing_assignees.map((a) => a.profiles?.full_name).filter(Boolean)
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
@@ -237,7 +237,7 @@ export default function FilingDetails() {
           <div>
             <h1 className="text-2xl font-bold">{f.filing_types?.name} <span className="text-[var(--muted)] font-normal">· {f.clients?.name}</span></h1>
             <p className="text-sm text-[var(--muted)] mt-1">
-              {f.filing_types?.departments?.name || 'Department set nahi'}
+              {f.filing_types?.departments?.name || 'Department not set'}
               {f.period ? ` · ${f.period}` : ''}{f.financial_year ? ` · FY ${f.financial_year}` : ''}
             </p>
           </div>
@@ -280,15 +280,15 @@ export default function FilingDetails() {
               </div>
             </div>
             <p className="text-xs text-[var(--muted)] mt-3">
-              "Completed" ka matlab hamara kaam poora hua; asli government filing sirf "Filing result" se mark hoti hai.
+              "Completed" means our work is done; the actual government filing is marked only via "Filing result.
             </p>
             {['filed_successfully', 'revised_rectified'].includes(f.filing_result) && !f.arn_number && (
-              <p className="text-xs text-amber-400 mt-2">Filing mark ho chuki hai par ARN / acknowledgement abhi nahi bhara.</p>
+              <p className="text-xs text-amber-400 mt-2">Filing has been marked, but the ARN / acknowledgement hasn\'t been entered yet.</p>
             )}
           </Section>
 
           {/* DATA + SUBMISSION */}
-          <Section title="Filing data aur submission">
+          <Section title="Filing data and submission">
             <form onSubmit={saveDetails} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -298,14 +298,14 @@ export default function FilingDetails() {
                 <div>
                   <label className="label">Registration (GSTIN / TAN...)</label>
                   <select className="w-full" value={form.registration_id} onChange={set('registration_id')}>
-                    <option value="">Koi nahi / sab</option>
+                    <option value="">None / all</option>
                     {regs.map((r) => <option key={r.id} value={r.id}>{regLabel(r)}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="label">Reviewer</label>
                   <select className="w-full" value={form.reviewer_id} onChange={set('reviewer_id')}>
-                    <option value="">Koi nahi</option>
+                    <option value="">None</option>
                     {people.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.id.slice(0, 6)}</option>)}
                   </select>
                 </div>
@@ -323,7 +323,7 @@ export default function FilingDetails() {
                 <textarea className="w-full" rows={2} value={form.remarks} onChange={set('remarks')} />
               </div>
               <button className="btn btn-primary" disabled={busy}>
-                {busy && <Loader2 size={16} className="animate-spin" />} Save karo
+                {busy && <Loader2 size={16} className="animate-spin" />} Save
               </button>
             </form>
           </Section>
@@ -344,10 +344,10 @@ export default function FilingDetails() {
                   <button className="icon-btn" title="Hatao" onClick={() => removeItem(it)}><Trash2 size={14} className="text-red-400" /></button>
                 </div>
               ))}
-              {items.length === 0 && <p className="text-sm text-[var(--muted)]">Abhi koi step nahi hai.</p>}
+              {items.length === 0 && <p className="text-sm text-[var(--muted)]">No steps yet.</p>}
             </div>
             <form onSubmit={addItem} className="flex gap-2 mt-4">
-              <input className="flex-1" placeholder="Naya step, jaise: Sales register match kiya" value={newItem}
+              <input className="flex-1" placeholder="New step, e.g., Matched sales register" value={newItem}
                 onChange={(e) => setNewItem(e.target.value)} />
               <button className="btn btn-outline"><Plus size={16} /> Add</button>
             </form>
@@ -360,12 +360,12 @@ export default function FilingDetails() {
                 <select value={review.decision} onChange={(e) => setReview({ ...review, decision: e.target.value })}>
                   {DECISION.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
-                <input className="sm:col-span-2" placeholder="Reviewer ka comment" value={review.comment}
+                <input className="sm:col-span-2" placeholder="Reviewer comment" value={review.comment}
                   onChange={(e) => setReview({ ...review, comment: e.target.value })} />
               </div>
-              <button className="btn btn-outline" disabled={busy}>Review jodo</button>
+              <button className="btn btn-outline" disabled={busy}>Add review</button>
               <p className="text-xs text-[var(--muted)]">
-                "Changes required" par Work status apne aap "Changes Required" ho jata hai, aur "Approve" par "Ready to File".
+                "Choosing "Changes required" automatically sets Work status to "Changes Required", and "Approve" sets it to "Ready to File".".
               </p>
             </form>
             <div className="space-y-3">
@@ -381,7 +381,7 @@ export default function FilingDetails() {
                   {r.comment && <p className="mt-1">{r.comment}</p>}
                 </div>
               ))}
-              {reviews.length === 0 && <p className="text-sm text-[var(--muted)]">Abhi koi review nahi hua.</p>}
+              {reviews.length === 0 && <p className="text-sm text-[var(--muted)]">No reviews yet.</p>}
             </div>
           </Section>
         </div>
@@ -393,18 +393,18 @@ export default function FilingDetails() {
             <Row k="Department">{f.filing_types?.departments?.name || '-'}</Row>
             <Row k="Period">{f.period || '-'}</Row>
             <Row k="Registration">{reg ? regLabel(reg) : '-'}</Row>
-            <Row k="Assigned">{assignees.join(', ') || 'Koi nahi'}</Row>
+            <Row k="Assigned">{assignees.join(', ') || 'None'}</Row>
             <Row k="Reviewer">{f.reviewer_id ? who(f.reviewer_id) : '-'}</Row>
           </Section>
 
           <Section icon={AlarmClock} title="Reminders">
             {f.work_status === 'not_applicable' ? (
-              <p className="text-sm text-[var(--muted)]">Not Applicable hone se reminders band hain.</p>
+              <p className="text-sm text-[var(--muted)]">Reminders are off because the filing is marked Not Applicable.</p>
             ) : (
               <div className="text-sm space-y-1">
-                <Row k="Din pehle">{(f.reminder_days || []).join(', ') || '-'}</Row>
+                <Row k="Days before">{(f.reminder_days || []).join(', ') || '-'}</Row>
                 <Row k="Channels">{(f.channels || []).join(', ') || '-'}</Row>
-                {assignees.length === 0 && open && <p className="text-xs text-amber-400">Kisi ko assign nahi, to koi reminder nahi jayega.</p>}
+                {assignees.length === 0 && open && <p className="text-xs text-amber-400">No one is assigned, so no reminders will be sent.</p>}
               </div>
             )}
             <div className="mt-3 space-y-1.5">
@@ -413,7 +413,7 @@ export default function FilingDetails() {
                   {when(l.sent_at)} · {l.profiles?.full_name || '-'} · {l.channel.startsWith('esc_') ? 'Escalation ' : ''}{l.channel.replace('esc_', '')}
                 </div>
               ))}
-              {log.length === 0 && <p className="text-xs text-[var(--muted)]">Abhi tak koi reminder nahi bheja gaya.</p>}
+              {log.length === 0 && <p className="text-xs text-[var(--muted)]">No reminders sent yet..</p>}
             </div>
           </Section>
 
@@ -425,7 +425,7 @@ export default function FilingDetails() {
                   <div className="text-xs text-[var(--muted)]">{who(a.user_id)} · {when(a.created_at)}</div>
                 </div>
               ))}
-              {activity.length === 0 && <p className="text-sm text-[var(--muted)]">Abhi koi activity nahi.</p>}
+              {activity.length === 0 && <p className="text-sm text-[var(--muted)]">No activity yet.</p>}
             </div>
           </Section>
         </div>

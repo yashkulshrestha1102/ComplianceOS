@@ -8,10 +8,10 @@ import { toast } from '@/components/Feedback'
 const APPLIC = [
   ['applicable', 'Applicable'],
   ['not_applicable', 'Not applicable'],
-  ['unknown', 'Pata nahi'],
+  ['unknown', 'Unknown'],
 ]
 const SERVICE = [
-  ['handled', 'Handled (hum karte hain)'],
+  ['handled', 'Handled (by us)'],
   ['not_handled', 'Not handled'],
   ['not_applicable', 'Not applicable'],
   ['pending_confirmation', 'Pending confirmation'],
@@ -112,7 +112,7 @@ export default function ComplianceConfigModal({ client, canEdit, onClose }) {
 
     setSaving(false)
     if (failed) return toast.error(failed.message)
-    toast.success(`${dirty.length} compliance save ho gayi ✅`)
+    toast.success(`${dirty.length} compliance(s) saved ✅`)
     load()
   }
 
@@ -130,7 +130,7 @@ export default function ComplianceConfigModal({ client, canEdit, onClose }) {
         {types === null ? (
           <div className="skeleton h-40" />
         ) : groups.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">Pehle Filing Types page par filing types add karo.</p>
+          <p className="text-sm text-[var(--muted)]">Add filing types on the Filing Types page first.</p>
         ) : groups.map((g) => (
           <div key={g.key} className="card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -138,9 +138,9 @@ export default function ComplianceConfigModal({ client, canEdit, onClose }) {
               {canEdit && (
                 <div className="flex gap-2">
                   <button type="button" className="btn btn-outline" style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                    onClick={() => setGroup(g, 'handled')}>Sab Handled</button>
+                    onClick={() => setGroup(g, 'handled')}>all Handled</button>
                   <button type="button" className="btn btn-outline" style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                    onClick={() => setGroup(g, 'not_applicable')}>Sab N/A</button>
+                    onClick={() => setGroup(g, 'not_applicable')}>all N/A</button>
                 </div>
               )}
             </div>
@@ -171,13 +171,12 @@ export default function ComplianceConfigModal({ client, canEdit, onClose }) {
         ))}
 
         <p className="text-xs text-[var(--muted)]">
-          Applicable aur Handled alag hain: koi compliance client par lagu ho sakti hai par hum use na karte hon.
-          "Pending" ka matlab abhi confirm nahi hua. GST ke liye har GSTIN ka alag config baad me jodenge.
+          "Applicable" and "Handled" are different: a compliance may apply to the client but we may not handle it. "Pending" means it isn\'t confirmed yet. Per-GSTIN configs for GST will be added later.
         </p>
 
         {canEdit && (
           <div className="flex justify-end gap-3 pt-1">
-            <button className="btn btn-outline" onClick={onClose}>Band karo</button>
+            <button className="btn btn-outline" onClick={onClose}>Close</button>
             <button className="btn btn-primary" disabled={saving || dirtyCount === 0} onClick={save}>
               {saving && <Loader2 size={16} className="animate-spin" />} Save ({dirtyCount})
             </button>
